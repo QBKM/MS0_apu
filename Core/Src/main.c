@@ -26,6 +26,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "ds3231.h"
+#include "mpu6050.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -83,6 +84,7 @@ int main(void)
   MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
   	DS3231_Init();
+	MPU6050_Init();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -90,6 +92,7 @@ int main(void)
   while (1)
   {
 	DS3231_Read_All();
+	MPU6050_Read_All();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
