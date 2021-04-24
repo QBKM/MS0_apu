@@ -27,6 +27,7 @@
 /* USER CODE BEGIN Includes */
 #include "ds3231.h"
 #include "mpu6050.h"
+#include "bmp280.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -85,6 +86,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
   	DS3231_Init();
 	MPU6050_Init();
+	BMP280_Init();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -93,6 +95,7 @@ int main(void)
   {
 	DS3231_Read_All();
 	MPU6050_Read_All();
+	BMP280_Read_All();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
