@@ -28,6 +28,8 @@
 #include "ds3231.h"
 #include "mpu6050.h"
 #include "bmp280.h"
+#include "ssd1306.h"
+#include "bitmap.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -84,18 +86,22 @@ int main(void)
   MX_USART2_UART_Init();
   MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
-  	DS3231_Init();
-	MPU6050_Init();
-	BMP280_Init();
+  	//DS3231_Init();
+	//MPU6050_Init();
+	//BMP280_Init();
+	SSD1306_Init();
+
+	SSD1306_DrawBitmap(0, 0, logo_ms0, 128, 64, SSD1306_COLOR_WHITE);
+	SSD1306_UpdateScreen();
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	DS3231_Read_All();
-	MPU6050_Read_All();
-	BMP280_Read_All();
+	//DS3231_Read_All();
+	//MPU6050_Read_All();
+	//BMP280_Read_All();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
