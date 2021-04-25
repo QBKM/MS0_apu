@@ -22,11 +22,6 @@
 /* ------------------------------------------------------------- --
    defines
 -- ------------------------------------------------------------- */
-/* BMP280 address is 0x77 if SDO pin is high, and is 0x76 if low */
-#define BMP280_ADDR  0x76
-#define BMP280_CHIP_ID  0x58 /* BMP280 has chip-id 0x58 */
-
-
 /* BMP280 registers */
 #define BMP280_REG_TEMP_XLSB   0xFC /* bits: 7-4 */
 #define BMP280_REG_TEMP_LSB    0xFB
