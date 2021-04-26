@@ -379,9 +379,9 @@ uint8_t SSD1306_Puts_Num16bits(int16_t number, FontDef_t* Font, SSD1306_COLOR_t 
 uint8_t SSD1306_Puts_float(float number, FontDef_t* Font, SSD1306_COLOR_t color)
 {
 	char buffer[10];
+	size_t max_size = 6;
 
-	//sprintf(buffer, "%d", number);
-	gcvt(number, 6, buffer);
+	snprintf(buffer, max_size, "%f", number);
 	SSD1306_Puts(buffer, Font, color);
 
 	return *buffer;
