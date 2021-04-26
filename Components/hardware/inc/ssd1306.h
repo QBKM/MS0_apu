@@ -17,11 +17,6 @@
    includes
 -- ------------------------------------------------------------- */
 #include "fonts.h"
-#include "main.h"
-
-#include "stdlib.h"
-#include "string.h"
-#include "stdio.h"
 
 /* ------------------------------------------------------------- --
    defines
@@ -60,20 +55,20 @@ typedef struct
    Functions
 -- ------------------------------------------------------------- */
 /* init */
-uint8_t SSD1306_Init(void);
+void SSD1306_Init(void);
 
 /* screen action */
-uint8_t SSD1306_UpdateScreen(void);
-uint8_t SSD1306_Fill(SSD1306_COLOR_t Color);
-uint8_t SSD1306_Clear (void);
+void SSD1306_UpdateScreen(void);
+void SSD1306_Fill(SSD1306_COLOR_t Color);
+void SSD1306_Clear (void);
 
 /* cursor */
-uint8_t SSD1306_GotoXY(uint16_t x, uint16_t y);
+void SSD1306_GotoXY(uint16_t x, uint16_t y);
 
 /* draw  */
-uint8_t SSD1306_DrawPixel(uint16_t x, uint16_t y, SSD1306_COLOR_t color);
+void SSD1306_DrawPixel(uint16_t x, uint16_t y, SSD1306_COLOR_t color);
 uint8_t SSD1306_DrawLine(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, SSD1306_COLOR_t c);
-uint8_t SSD1306_DrawBitmap(int16_t x, int16_t y, const unsigned char* bitmap, int16_t w, int16_t h, uint16_t color);
+void SSD1306_DrawBitmap(int16_t x, int16_t y, const unsigned char* bitmap, int16_t w, int16_t h, uint16_t color);
 
 /* print characters */
 uint8_t SSD1306_Putc(uint8_t ch, FontDef_t* Font, SSD1306_COLOR_t color);
@@ -82,9 +77,9 @@ uint8_t SSD1306_Puts_Num16bits(int16_t number, FontDef_t* Font, SSD1306_COLOR_t 
 uint8_t SSD1306_Puts_float(float number, FontDef_t* Font, SSD1306_COLOR_t color);
 
 /* scroll */
-uint8_t SSD1306_ScrollRight(uint8_t start_row, uint8_t end_row);
-uint8_t SSD1306_ScrollLeft(uint8_t start_row, uint8_t end_row);
-uint8_t SSD1306_Stopscroll(void);
+void SSD1306_ScrollRight(uint8_t start_row, uint8_t end_row);
+void SSD1306_ScrollLeft(uint8_t start_row, uint8_t end_row);
+void SSD1306_Stopscroll(void);
 
 /* i2c */
 void SSD1306_I2C_WriteMulti(uint8_t address, uint8_t reg, uint8_t *data, uint16_t count);

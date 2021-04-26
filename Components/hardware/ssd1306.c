@@ -14,6 +14,7 @@
 -- ------------------------------------------------------------- */
 #include "ssd1306.h"
 #include "i2c.h"
+#include "stdio.h"
 #include "config_file.h"
 
 /* ------------------------------------------------------------- --
@@ -32,7 +33,7 @@ SSD1306_t SSD1306;
 /* ------------------------------------------------------------- --
    Private prototypes
 -- ------------------------------------------------------------- */
-uint8_t SSD1306_WriteCommand(uint8_t cmd);
+void SSD1306_WriteCommand(uint8_t cmd);
 
 
 /* ------------------------------------------------------------- --
@@ -44,13 +45,11 @@ uint8_t SSD1306_WriteCommand(uint8_t cmd);
  *
  * @args
  * ************************************************************* */
-uint8_t SSD1306_WriteCommand(uint8_t cmd)
+void SSD1306_WriteCommand(uint8_t cmd)
 {
 	uint8_t data[2] = {SSD1306_REG_CMD, cmd};
 
-	if(HAL_I2C_Master_Transmit(&hi2c1, SSD1306_ADDR, data, 2, HAL_MAX_DELAY)) return HAL_ERROR;
-
-	return HAL_OK;
+	HAL_I2C_Master_Transmit(&hi2c1, SSD1306_ADDR, data, 2, HAL_MAX_DELAY);
 }
 
 
@@ -63,7 +62,7 @@ uint8_t SSD1306_WriteCommand(uint8_t cmd)
  *
  * @args
  * ************************************************************* */
-uint8_t SSD1306_Init(void)
+void SSD1306_Init(void)
 {
 	/* Init LCD */
 	SSD1306_WriteCommand(0xAE); //display off
@@ -108,9 +107,6 @@ uint8_t SSD1306_Init(void)
 	
 	/* Initialized OK */
 	SSD1306.Initialized = 1;
-	
-	/* Return OK */
-	return HAL_OK;
 }
 
 /* ************************************************************* *
@@ -119,11 +115,11 @@ uint8_t SSD1306_Init(void)
  *
  * @args
  * ************************************************************* */
-uint8_t SSD1306_Fill(SSD1306_COLOR_t color)
+void SSD1306_Fill(SSD1306_COLOR_t color)
 {
 	/* Set memory */
+	if(color == SSD1306_COLOR_BLACK)
 	memset(SSD1306_Buffer, (color == SSD1306_COLOR_BLACK) ? 0x00 : 0xFF, sizeof(SSD1306_Buffer));
-	return 0;
 }
 
 
@@ -133,7 +129,7 @@ uint8_t SSD1306_Fill(SSD1306_COLOR_t color)
  *
  * @args
  * ************************************************************* */
-uint8_t SSD1306_UpdateScreen(void) {
+void SSD1306_UpdateScreen(void) {
 	uint8_t m;
 	
 	for (m = 0; m < 8; m++) {
@@ -143,8 +139,6 @@ uint8_t SSD1306_UpdateScreen(void) {
 		
 		SSD1306_I2C_WriteMulti(SSD1306_ADDR, 0x40, &SSD1306_Buffer[SSD1306_WIDTH * m], SSD1306_WIDTH);
 	}
-
-	return 0;
 }
 
 
@@ -171,11 +165,10 @@ void SSD1306_I2C_WriteMulti(uint8_t address, uint8_t reg, uint8_t* data, uint16_
  *
  * @args
  * ************************************************************* */
-uint8_t SSD1306_Clear(void)
+void SSD1306_Clear(void)
 {
 	SSD1306_Fill (SSD1306_COLOR_BLACK);
     SSD1306_UpdateScreen();
-    return 0;
 }
 
 
@@ -185,12 +178,11 @@ uint8_t SSD1306_Clear(void)
  *
  * @args
  * ************************************************************* */
-uint8_t SSD1306_GotoXY(uint16_t x, uint16_t y)
+void SSD1306_GotoXY(uint16_t x, uint16_t y)
 {
 	/* Set write pointers */
 	SSD1306.CurrentX = x;
 	SSD1306.CurrentY = y;
-	return 0;
 }
 
 
@@ -200,18 +192,17 @@ uint8_t SSD1306_GotoXY(uint16_t x, uint16_t y)
  *
  * @args
  * ************************************************************* */
-uint8_t SSD1306_DrawPixel(uint16_t x, uint16_t y, SSD1306_COLOR_t color)
+void SSD1306_DrawPixel(uint16_t x, uint16_t y, SSD1306_COLOR_t color)
 {
-	if (x >= SSD1306_WIDTH || y >= SSD1306_HEIGHT) /* Error */ return 0;
-	
-	/* Set color */
-	if (color == SSD1306_COLOR_WHITE) {
-		SSD1306_Buffer[x + (y / 8) * SSD1306_WIDTH] |= 1 << (y % 8);
-	} else {
-		SSD1306_Buffer[x + (y / 8) * SSD1306_WIDTH] &= ~(1 << (y % 8));
+	if (x < SSD1306_WIDTH || y < SSD1306_HEIGHT)
+	{
+		/* Set color */
+		if (color == SSD1306_COLOR_WHITE) {
+			SSD1306_Buffer[x + (y / 8) * SSD1306_WIDTH] |= 1 << (y % 8);
+		} else {
+			SSD1306_Buffer[x + (y / 8) * SSD1306_WIDTH] &= ~(1 << (y % 8));
+		}
 	}
-
-	return 0;
 }
 
 
@@ -221,7 +212,7 @@ uint8_t SSD1306_DrawPixel(uint16_t x, uint16_t y, SSD1306_COLOR_t color)
  *
  * @args
  * ************************************************************* */
-uint8_t SSD1306_DrawBitmap(int16_t x, int16_t y, const unsigned char* bitmap, int16_t w, int16_t h, uint16_t color)
+void SSD1306_DrawBitmap(int16_t x, int16_t y, const unsigned char* bitmap, int16_t w, int16_t h, uint16_t color)
 {
 
     int16_t byteWidth = (w + 7) / 8; // Bitmap scanline pad = whole byte
@@ -242,8 +233,6 @@ uint8_t SSD1306_DrawBitmap(int16_t x, int16_t y, const unsigned char* bitmap, in
             if(byte & 0x80) SSD1306_DrawPixel(x+i, y, color);
         }
     }
-
-    return 0;
 }
 
 
@@ -338,8 +327,6 @@ uint8_t SSD1306_DrawLine(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, SSD
 			y0 += sy;
 		} 
 	}
-
-	return 0;
 }
 
 
@@ -454,7 +441,7 @@ uint8_t SSD1306_Puts_float(float number, FontDef_t* Font, SSD1306_COLOR_t color)
  *
  * @args
  * ************************************************************* */
-uint8_t SSD1306_ScrollRight(uint8_t start_row, uint8_t end_row)
+void SSD1306_ScrollRight(uint8_t start_row, uint8_t end_row)
 {
   SSD1306_WriteCommand(SSD1306_RIGHT_HORIZONTAL_SCROLL);  // send 0x26
   SSD1306_WriteCommand(0x00);  // send dummy
@@ -464,8 +451,6 @@ uint8_t SSD1306_ScrollRight(uint8_t start_row, uint8_t end_row)
   SSD1306_WriteCommand(0X00);
   SSD1306_WriteCommand(0XFF);
   SSD1306_WriteCommand(SSD1306_ACTIVATE_SCROLL); // start scroll
-
-  return HAL_OK;
 }
 
 
@@ -475,7 +460,7 @@ uint8_t SSD1306_ScrollRight(uint8_t start_row, uint8_t end_row)
  *
  * @args
  * ************************************************************* */
-uint8_t SSD1306_ScrollLeft(uint8_t start_row, uint8_t end_row)
+void SSD1306_ScrollLeft(uint8_t start_row, uint8_t end_row)
 {
   SSD1306_WriteCommand(SSD1306_LEFT_HORIZONTAL_SCROLL);  // send 0x26
   SSD1306_WriteCommand(0x00);  // send dummy
@@ -485,8 +470,6 @@ uint8_t SSD1306_ScrollLeft(uint8_t start_row, uint8_t end_row)
   SSD1306_WriteCommand(0X00);
   SSD1306_WriteCommand(0XFF);
   SSD1306_WriteCommand(SSD1306_ACTIVATE_SCROLL); // start scroll
-
-  return HAL_OK;
 }
 
 
@@ -496,8 +479,7 @@ uint8_t SSD1306_ScrollLeft(uint8_t start_row, uint8_t end_row)
  *
  * @args
  * ************************************************************* */
-uint8_t SSD1306_Stopscroll(void)
+void SSD1306_Stopscroll(void)
 {
 	 SSD1306_WriteCommand(SSD1306_DEACTIVATE_SCROLL);
-	 return 0;
 }
