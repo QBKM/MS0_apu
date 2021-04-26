@@ -46,8 +46,8 @@ void 	SSD1306_DrawPixel(uint16_t x, uint16_t y, SSD1306_COLOR_t color);
 void 	SSD1306_DrawBitmap(int16_t x, int16_t y, const unsigned char* bitmap, int16_t w, int16_t h, uint16_t color);
 
 /* print characters */
-uint8_t SSD1306_Putc(uint8_t ch, FontDef_t* Font, SSD1306_COLOR_t color);
-uint8_t SSD1306_Puts(uint8_t* str, FontDef_t* Font, SSD1306_COLOR_t color);
+uint8_t SSD1306_Putc(char ch, FontDef_t* Font, SSD1306_COLOR_t color);
+uint8_t SSD1306_Puts(char* str, FontDef_t* Font, SSD1306_COLOR_t color);
 uint8_t SSD1306_Puts_Num16bits(int16_t number, FontDef_t* Font, SSD1306_COLOR_t color);
 uint8_t SSD1306_Puts_float(float number, FontDef_t* Font, SSD1306_COLOR_t color);
 

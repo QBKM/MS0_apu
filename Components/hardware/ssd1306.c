@@ -286,7 +286,7 @@ void SSD1306_DrawBitmap(int16_t x, int16_t y, const unsigned char* bitmap, int16
  * @param       color 
  * @return      uint8_t 
  * ************************************************************* **/
-uint8_t SSD1306_Putc(uint8_t ch, FontDef_t* Font, SSD1306_COLOR_t color) {
+uint8_t SSD1306_Putc(char ch, FontDef_t* Font, SSD1306_COLOR_t color) {
 	uint32_t i, b, j;
 	
 	/* Check available space in LCD */
@@ -325,7 +325,7 @@ uint8_t SSD1306_Putc(uint8_t ch, FontDef_t* Font, SSD1306_COLOR_t color) {
  * @param       color 
  * @return      uint8_t 
  * ************************************************************* **/
-uint8_t SSD1306_Puts(uint8_t* str, FontDef_t* Font, SSD1306_COLOR_t color) {
+uint8_t SSD1306_Puts(char* str, FontDef_t* Font, SSD1306_COLOR_t color) {
 	/* Write characters */
 	while (*str) {
 		/* Write character by character */
@@ -352,7 +352,7 @@ uint8_t SSD1306_Puts(uint8_t* str, FontDef_t* Font, SSD1306_COLOR_t color) {
  * ************************************************************* **/
 uint8_t SSD1306_Puts_Num16bits(int16_t number, FontDef_t* Font, SSD1306_COLOR_t color)
 {
-	uint8_t buffer[10];
+	char buffer[10];
 
 	if(number < 10)
 	{
@@ -378,7 +378,7 @@ uint8_t SSD1306_Puts_Num16bits(int16_t number, FontDef_t* Font, SSD1306_COLOR_t 
  * ************************************************************* **/
 uint8_t SSD1306_Puts_float(float number, FontDef_t* Font, SSD1306_COLOR_t color)
 {
-	uint8_t buffer[10];
+	char buffer[10];
 
 	//sprintf(buffer, "%d", number);
 	gcvt(number, 6, buffer);
