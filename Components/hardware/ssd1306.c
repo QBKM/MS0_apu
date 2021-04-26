@@ -9,6 +9,7 @@
  * 
  * ************************************************************* **/
 
+
 /* ------------------------------------------------------------- --
    Includes
 -- ------------------------------------------------------------- */
@@ -17,89 +18,122 @@
 #include "stdio.h"
 #include "config_file.h"
 
+
 /* ------------------------------------------------------------- --
    defines
 -- ------------------------------------------------------------- */
+/* SSD1306 size in pixels */
+#define SSD1306_WIDTH            			128
+#define SSD1306_HEIGHT           			64
+
+/* register addresses*/
+#define SSD1306_REG_CMD						0x00
+
+/* list of commands */
+#define SSD1306_RIGHT_HORIZONTAL_SCROLL		0x26
+#define SSD1306_LEFT_HORIZONTAL_SCROLL		0x27
+#define SSD1306_DEACTIVATE_SCROLL			0x2E 
+#define SSD1306_ACTIVATE_SCROLL				0x2F 
+#define SSD1306_SET_VERTICAL_SCROLL_AREA	0xA3 
+
+/* I2C timeout*/
 #ifndef TIMEOUT_I2C
 #define TIMEOUT_I2C 10
 #endif
 
+
+/* ------------------------------------------------------------- --
+   types
+-- ------------------------------------------------------------- */
+typedef struct
+{
+	uint16_t CurrentX;
+	uint16_t CurrentY;
+
+	uint8_t Initialized;
+}SSD1306_t;
+
+
 /* ------------------------------------------------------------- --
    variables
 -- ------------------------------------------------------------- */
-static uint8_t SSD1306_Buffer[SSD1306_WIDTH * SSD1306_HEIGHT / 8];
 SSD1306_t SSD1306;
+
+/* screen buffer */
+static uint8_t SSD1306_Buffer[SSD1306_WIDTH * SSD1306_HEIGHT / 8];
+
 
 /* ------------------------------------------------------------- --
    Private prototypes
 -- ------------------------------------------------------------- */
-void SSD1306_WriteCommand(uint8_t cmd);
+uint8_t SSD1306_WriteCommand(uint8_t cmd);
 
 
-/* ------------------------------------------------------------- --
-   Private functions
--- ------------------------------------------------------------- */
-/* ************************************************************* *
- * @name		SSD1306_WriteCommand
- * @brief		send the commands
- *
- * @args
- * ************************************************************* */
-void SSD1306_WriteCommand(uint8_t cmd)
+/* ============================================================= ==
+   private functions
+== ============================================================= */
+/** ************************************************************* *
+ * @brief       send the commands to the SSD1306
+ * 
+ * @param       cmd 
+ * ************************************************************* **/
+uint8_t SSD1306_WriteCommand(uint8_t cmd)
 {
 	uint8_t data[2] = {SSD1306_REG_CMD, cmd};
 
-	HAL_I2C_Master_Transmit(&hi2c1, SSD1306_ADDR, data, 2, HAL_MAX_DELAY);
-}
+	if(HAL_I2C_Master_Transmit(&hi2c1, SSD1306_ADDR, data, 2, HAL_MAX_DELAY)) return HAL_ERROR;
+	return HAL_OK;
+}	
 
 
-/* ------------------------------------------------------------- --
-   Functions
--- ------------------------------------------------------------- */
-/* ************************************************************* *
- * @name		SSD1306_Init
- * @brief		initialize the mpu6050
- *
- * @args
- * ************************************************************* */
-void SSD1306_Init(void)
+/* ============================================================= ==
+   private functions
+== ============================================================= */
+/** ************************************************************* *
+ * @brief       initialize the SSD1306
+ * 
+ * ************************************************************* **/
+uint8_t SSD1306_Init(void)
 {
 	/* Init LCD */
-	SSD1306_WriteCommand(0xAE); //display off
-	SSD1306_WriteCommand(0x20); //Set Memory Addressing Mode   
-	SSD1306_WriteCommand(0x10); //00,Horizontal Addressing Mode;01,Vertical Addressing Mode;10,Page Addressing Mode (RESET);11,Invalid
-	SSD1306_WriteCommand(0xB0); //Set Page Start Address for Page Addressing Mode,0-7
-	SSD1306_WriteCommand(0xC8); //Set COM Output Scan Direction
-	SSD1306_WriteCommand(0x00); //---set low column address
-	SSD1306_WriteCommand(0x10); //---set high column address
-	SSD1306_WriteCommand(0x40); //--set start line address
-	SSD1306_WriteCommand(0x81); //--set contrast control register
-	SSD1306_WriteCommand(0xFF);
-	SSD1306_WriteCommand(0xA1); //--set segment re-map 0 to 127
-	SSD1306_WriteCommand(0xA6); //--set normal display
-	SSD1306_WriteCommand(0xA8); //--set multiplex ratio(1 to 64)
-	SSD1306_WriteCommand(0x3F); //
-	SSD1306_WriteCommand(0xA4); //0xa4,Output follows RAM content;0xa5,Output ignores RAM content
-	SSD1306_WriteCommand(0xD3); //-set display offset
-	SSD1306_WriteCommand(0x00); //-not offset
-	SSD1306_WriteCommand(0xD5); //--set display clock divide ratio/oscillator frequency
-	SSD1306_WriteCommand(0xF0); //--set divide ratio
-	SSD1306_WriteCommand(0xD9); //--set pre-charge period
-	SSD1306_WriteCommand(0x22); //
-	SSD1306_WriteCommand(0xDA); //--set com pins hardware configuration
-	SSD1306_WriteCommand(0x12);
-	SSD1306_WriteCommand(0xDB); //--set vcomh
-	SSD1306_WriteCommand(0x20); //0x20,0.77xVcc
-	SSD1306_WriteCommand(0x8D); //--set DC-DC enable
-	SSD1306_WriteCommand(0x14); //
-	SSD1306_WriteCommand(0xAF); //--turn on SSD1306 panel
-	SSD1306_WriteCommand(SSD1306_DEACTIVATE_SCROLL);
+	if(	SSD1306_WriteCommand(0xAE) 		//display off
+	||	SSD1306_WriteCommand(0x20) 		//Set Memory Addressing Mode   
+	||	SSD1306_WriteCommand(0x10) 		//00,Horizontal Addressing Mode;01,Vertical Addressing Mode;10,Page Addressing Mode (RESET);11,Invalid
+	||	SSD1306_WriteCommand(0xB0) 		//Set Page Start Address for Page Addressing Mode,0-7
+	||	SSD1306_WriteCommand(0xC8) 		//Set COM Output Scan Direction
+	||	SSD1306_WriteCommand(0x00) 		//---set low column address
+	||	SSD1306_WriteCommand(0x10) 		//---set high column address
+	||	SSD1306_WriteCommand(0x40) 		//--set start line address
+	||	SSD1306_WriteCommand(0x81) 		//--set contrast control register
+	||	SSD1306_WriteCommand(0xFF)
+	||	SSD1306_WriteCommand(0xA1) 		//--set segment re-map 0 to 127
+	||	SSD1306_WriteCommand(0xA6) 		//--set normal display
+	||	SSD1306_WriteCommand(0xA8) 		//--set multiplex ratio(1 to 64)
+	||	SSD1306_WriteCommand(0x3F) 		//
+	||	SSD1306_WriteCommand(0xA4) 		//0xa4,Output follows RAM content;0xa5,Output ignores RAM content
+	||	SSD1306_WriteCommand(0xD3) 		//-set display offset
+	||	SSD1306_WriteCommand(0x00) 		//-not offset
+	||	SSD1306_WriteCommand(0xD5) 		//--set display clock divide ratio/oscillator frequency
+	||	SSD1306_WriteCommand(0xF0) 		//--set divide ratio
+	||	SSD1306_WriteCommand(0xD9) 		//--set pre-charge period
+	||	SSD1306_WriteCommand(0x22) 		//
+	||	SSD1306_WriteCommand(0xDA) 		//--set com pins hardware configuration
+	||	SSD1306_WriteCommand(0x12)
+	||	SSD1306_WriteCommand(0xDB) 		//--set vcomh
+	||	SSD1306_WriteCommand(0x20) 		//0x20,0.77xVcc
+	||	SSD1306_WriteCommand(0x8D) 		//--set DC-DC enable
+	||	SSD1306_WriteCommand(0x14) 		//
+	||	SSD1306_WriteCommand(0xAF) 		//--turn on SSD1306 panel
+	||	SSD1306_WriteCommand(SSD1306_DEACTIVATE_SCROLL))	
+	{
+		return HAL_ERROR;
+	}	
 
 	/* Clear screen */
 	SSD1306_Fill(SSD1306_COLOR_BLACK);
 	
 	/* Update screen */
-	SSD1306_UpdateScreen();
+	if(SSD1306_UpdateScreen()) return HAL_ERROR;
 	
 	/* Set default values */
 	SSD1306.CurrentX = 0;
@@ -107,14 +141,15 @@ void SSD1306_Init(void)
 	
 	/* Initialized OK */
 	SSD1306.Initialized = 1;
+
+	return HAL_OK;
 }
 
-/* ************************************************************* *
- * @name		SSD1306_Fill
- * @brief		fill the screen with the arg color
- *
- * @args
- * ************************************************************* */
+/** ************************************************************* *
+ * @brief       fill the screen with the arg color
+ * 
+ * @param       color 
+ * ************************************************************* **/
 void SSD1306_Fill(SSD1306_COLOR_t color)
 {
 	/* Set memory */
@@ -122,62 +157,67 @@ void SSD1306_Fill(SSD1306_COLOR_t color)
 	memset(SSD1306_Buffer, (color == SSD1306_COLOR_BLACK) ? 0x00 : 0xFF, sizeof(SSD1306_Buffer));
 }
 
-
-/* ************************************************************* *
- * @name		SSD1306_UpdateScreen
- * @brief		update the screen with the screen buffer
- *
- * @args
- * ************************************************************* */
-void SSD1306_UpdateScreen(void) {
+/** ************************************************************* *
+ * @brief       update the screen with the screen buffer
+ * 
+ * @return      uint8_t 
+ * ************************************************************* **/
+uint8_t SSD1306_UpdateScreen(void) {
 	uint8_t m;
 	
 	for (m = 0; m < 8; m++) {
-		SSD1306_WriteCommand(0xB0 + m);
-		SSD1306_WriteCommand(0x00);
-		SSD1306_WriteCommand(0x10);
+		if(	SSD1306_WriteCommand(0xB0 + m)
+		||	SSD1306_WriteCommand(0x00)
+		||	SSD1306_WriteCommand(0x10))
+		{
+			return HAL_ERROR;
+		}
 		
-		SSD1306_I2C_WriteMulti(SSD1306_ADDR, 0x40, &SSD1306_Buffer[SSD1306_WIDTH * m], SSD1306_WIDTH);
+		if(SSD1306_I2C_WriteMulti(SSD1306_ADDR, 0x40, &SSD1306_Buffer[SSD1306_WIDTH * m], SSD1306_WIDTH)) return HAL_ERROR;
 	}
+
+	return HAL_OK;
 }
 
-
-/* ************************************************************* *
- * @name		SSD1306_I2C_WriteMulti
- * @brief		send multi message on i2c
- *
- * @args
- * ************************************************************* */
-void SSD1306_I2C_WriteMulti(uint8_t address, uint8_t reg, uint8_t* data, uint16_t count) 
+/** ************************************************************* *
+ * @brief       send multi messages on i2c
+ * 
+ * @param       address 
+ * @param       reg 
+ * @param       data 
+ * @param       count 
+ * @return      uint8_t 
+ * ************************************************************* **/
+uint8_t SSD1306_I2C_WriteMulti(uint8_t address, uint8_t reg, uint8_t* data, uint16_t count) 
 {
 	uint8_t dt[256];
 	dt[0] = reg;
 	uint8_t i;
-		for(i = 0; i < count; i++) dt[i+1] = data[i];
+	for(i = 0; i < count; i++) dt[i+1] = data[i];
 
-	HAL_I2C_Master_Transmit(&hi2c1, address, dt, count+1, 10);
+	if(HAL_I2C_Master_Transmit(&hi2c1, address, dt, count+1, 10)) return HAL_ERROR;
+
+	return HAL_OK;
 }
 
-
-/* ************************************************************* *
- * @name		SSD1306_Clear
- * @brief		clear the screeb
- *
- * @args
- * ************************************************************* */
-void SSD1306_Clear(void)
+/** ************************************************************* *
+ * @brief       clear the screen
+ * 
+ * ************************************************************* **/
+uint8_t SSD1306_Clear(void)
 {
 	SSD1306_Fill (SSD1306_COLOR_BLACK);
-    SSD1306_UpdateScreen();
+	if(SSD1306_UpdateScreen()) return HAL_ERROR;
+
+	return HAL_OK;
 }
 
-
-/* ************************************************************* *
- * @name		SSD1306_GotoXY
- * @brief		move the cursor on the screen
- *
- * @args
- * ************************************************************* */
+/** ************************************************************* *
+ * @brief       move the cursor on the screen
+ * 
+ * @param       x 
+ * @param       y 
+ * ************************************************************* **/
 void SSD1306_GotoXY(uint16_t x, uint16_t y)
 {
 	/* Set write pointers */
@@ -185,13 +225,13 @@ void SSD1306_GotoXY(uint16_t x, uint16_t y)
 	SSD1306.CurrentY = y;
 }
 
-
-/* ************************************************************* *
- * @name		SSD1306_DrawPixel
- * @brief		draw a pixel at arg
- *
- * @args
- * ************************************************************* */
+/** ************************************************************* *
+ * @brief       draw a pixel at arg
+ * 
+ * @param       x 
+ * @param       y 
+ * @param       color 
+ * ************************************************************* **/
 void SSD1306_DrawPixel(uint16_t x, uint16_t y, SSD1306_COLOR_t color)
 {
 	if (x < SSD1306_WIDTH || y < SSD1306_HEIGHT)
@@ -205,13 +245,16 @@ void SSD1306_DrawPixel(uint16_t x, uint16_t y, SSD1306_COLOR_t color)
 	}
 }
 
-
-/* ************************************************************* *
- * @name		SSD1306_DrawBitmap
- * @brief		draw a bitmap
- *
- * @args
- * ************************************************************* */
+/** ************************************************************* *
+ * @brief       draw a bitmap
+ * 
+ * @param       x 
+ * @param       y 
+ * @param       bitmap 
+ * @param       w 
+ * @param       h 
+ * @param       color 
+ * ************************************************************* **/
 void SSD1306_DrawBitmap(int16_t x, int16_t y, const unsigned char* bitmap, int16_t w, int16_t h, uint16_t color)
 {
 
@@ -235,107 +278,14 @@ void SSD1306_DrawBitmap(int16_t x, int16_t y, const unsigned char* bitmap, int16
     }
 }
 
-
-/* ************************************************************* *
- * @name		SSD1306_DrawLine
- * @brief		draw a line
- *
- * @args
- * ************************************************************* */
-uint8_t SSD1306_DrawLine(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, SSD1306_COLOR_t c) {
-	int16_t dx, dy, sx, sy, err, e2, i, tmp; 
-	
-	/* Check for overflow */
-	if (x0 >= SSD1306_WIDTH) {
-		x0 = SSD1306_WIDTH - 1;
-	}
-	if (x1 >= SSD1306_WIDTH) {
-		x1 = SSD1306_WIDTH - 1;
-	}
-	if (y0 >= SSD1306_HEIGHT) {
-		y0 = SSD1306_HEIGHT - 1;
-	}
-	if (y1 >= SSD1306_HEIGHT) {
-		y1 = SSD1306_HEIGHT - 1;
-	}
-	
-	dx = (x0 < x1) ? (x1 - x0) : (x0 - x1); 
-	dy = (y0 < y1) ? (y1 - y0) : (y0 - y1); 
-	sx = (x0 < x1) ? 1 : -1; 
-	sy = (y0 < y1) ? 1 : -1; 
-	err = ((dx > dy) ? dx : -dy) / 2; 
-
-	if (dx == 0) {
-		if (y1 < y0) {
-			tmp = y1;
-			y1 = y0;
-			y0 = tmp;
-		}
-		
-		if (x1 < x0) {
-			tmp = x1;
-			x1 = x0;
-			x0 = tmp;
-		}
-		
-		/* Vertical line */
-		for (i = y0; i <= y1; i++) {
-			SSD1306_DrawPixel(x0, i, c);
-		}
-		
-		/* Return from function */
-		return 0;
-	}
-	
-	if (dy == 0) 
-	{
-		if (y1 < y0) 
-		{
-			tmp = y1;
-			y1 = y0;
-			y0 = tmp;
-		}
-		
-		if (x1 < x0) 
-		{
-			tmp = x1;
-			x1 = x0;
-			x0 = tmp;
-		}
-		
-		/* Horizontal line */
-		for (i = x0; i <= x1; i++) {
-			SSD1306_DrawPixel(i, y0, c);
-		}
-		
-		/* Return from function */
-		return 0;
-	}
-	
-	while (1) {
-		SSD1306_DrawPixel(x0, y0, c);
-		if (x0 == x1 && y0 == y1) {
-			break;
-		}
-		e2 = err; 
-		if (e2 > -dx) {
-			err -= dy;
-			x0 += sx;
-		} 
-		if (e2 < dy) {
-			err += dx;
-			y0 += sy;
-		} 
-	}
-}
-
-
-/* ************************************************************* *
- * @name		SSD1306_Putc
- * @brief		print a character
- *
- * @args
- * ************************************************************* */
+/** ************************************************************* *
+ * @brief       print a character
+ * 
+ * @param       ch 
+ * @param       Font 
+ * @param       color 
+ * @return      uint8_t 
+ * ************************************************************* **/
 uint8_t SSD1306_Putc(uint8_t ch, FontDef_t* Font, SSD1306_COLOR_t color) {
 	uint32_t i, b, j;
 	
@@ -367,13 +317,14 @@ uint8_t SSD1306_Putc(uint8_t ch, FontDef_t* Font, SSD1306_COLOR_t color) {
 	return ch;
 }
 
-
-/* ************************************************************* *
- * @name		SSD1306_Puts
- * @brief		print a string
- *
- * @args
- * ************************************************************* */
+/** ************************************************************* *
+ * @brief       print a string
+ * 
+ * @param       str 
+ * @param       Font 
+ * @param       color 
+ * @return      uint8_t 
+ * ************************************************************* **/
 uint8_t SSD1306_Puts(uint8_t* str, FontDef_t* Font, SSD1306_COLOR_t color) {
 	/* Write characters */
 	while (*str) {
@@ -391,13 +342,14 @@ uint8_t SSD1306_Puts(uint8_t* str, FontDef_t* Font, SSD1306_COLOR_t color) {
 	return *str;
 }
 
-
-/* ************************************************************* *
- * @name		SSD1306_Puts_Num16bits
- * @brief		print a number
- *
- * @args
- * ************************************************************* */
+/** ************************************************************* *
+ * @brief       print a number
+ * 
+ * @param       number 
+ * @param       Font 
+ * @param       color 
+ * @return      uint8_t 
+ * ************************************************************* **/
 uint8_t SSD1306_Puts_Num16bits(int16_t number, FontDef_t* Font, SSD1306_COLOR_t color)
 {
 	uint8_t buffer[10];
@@ -416,13 +368,14 @@ uint8_t SSD1306_Puts_Num16bits(int16_t number, FontDef_t* Font, SSD1306_COLOR_t 
 	return *buffer;
 }
 
-
-/* ************************************************************* *
- * @name		SSD1306_Puts_float
- * @brief		print a number
- *
- * @args
- * ************************************************************* */
+/** ************************************************************* *
+ * @brief       print a number
+ * 
+ * @param       number 
+ * @param       Font 
+ * @param       color 
+ * @return      uint8_t 
+ * ************************************************************* **/
 uint8_t SSD1306_Puts_float(float number, FontDef_t* Font, SSD1306_COLOR_t color)
 {
 	uint8_t buffer[10];
@@ -434,52 +387,59 @@ uint8_t SSD1306_Puts_float(float number, FontDef_t* Font, SSD1306_COLOR_t color)
 	return *buffer;
 }
 
-
-/* ************************************************************* *
- * @name		SSD1306_ScrollRight
- * @brief		scroll text to the right
- *
- * @args
- * ************************************************************* */
-void SSD1306_ScrollRight(uint8_t start_row, uint8_t end_row)
+/** ************************************************************* *
+ * @brief       scroll text to the right
+ * 
+ * @param       start_row 
+ * @param       end_row 
+ * ************************************************************* **/
+uint8_t SSD1306_ScrollRight(uint8_t start_row, uint8_t end_row)
 {
-  SSD1306_WriteCommand(SSD1306_RIGHT_HORIZONTAL_SCROLL);  // send 0x26
-  SSD1306_WriteCommand(0x00);  // send dummy
-  SSD1306_WriteCommand(start_row);  // start page address
-  SSD1306_WriteCommand(0X00);  // time interval 5 frames
-  SSD1306_WriteCommand(end_row);  // end page address
-  SSD1306_WriteCommand(0X00);
-  SSD1306_WriteCommand(0XFF);
-  SSD1306_WriteCommand(SSD1306_ACTIVATE_SCROLL); // start scroll
+	if(	SSD1306_WriteCommand(SSD1306_RIGHT_HORIZONTAL_SCROLL)	// send 0x26
+	||	SSD1306_WriteCommand(0x00)  							// send dummy
+	||	SSD1306_WriteCommand(start_row)  						// start page address
+	||	SSD1306_WriteCommand(0X00)  							// time interval 5 frames
+	||	SSD1306_WriteCommand(end_row)  							// end page address
+	||	SSD1306_WriteCommand(0X00)
+	||	SSD1306_WriteCommand(0XFF)
+	||	SSD1306_WriteCommand(SSD1306_ACTIVATE_SCROLL)) 			// start scroll
+	{
+		return HAL_ERROR;
+	}
+
+	return HAL_OK;
 }
 
-
-/* ************************************************************* *
- * @name		SSD1306_ScrollLeft
- * @brief		scroll text to the left
- *
- * @args
- * ************************************************************* */
-void SSD1306_ScrollLeft(uint8_t start_row, uint8_t end_row)
+/** ************************************************************* *
+ * @brief       scroll text to the left
+ * 
+ * @param       start_row 
+ * @param       end_row 
+ * ************************************************************* **/
+uint8_t SSD1306_ScrollLeft(uint8_t start_row, uint8_t end_row)
 {
-  SSD1306_WriteCommand(SSD1306_LEFT_HORIZONTAL_SCROLL);  // send 0x26
-  SSD1306_WriteCommand(0x00);  // send dummy
-  SSD1306_WriteCommand(start_row);  // start page address
-  SSD1306_WriteCommand(0X00);  // time interval 5 frames
-  SSD1306_WriteCommand(end_row);  // end page address
-  SSD1306_WriteCommand(0X00);
-  SSD1306_WriteCommand(0XFF);
-  SSD1306_WriteCommand(SSD1306_ACTIVATE_SCROLL); // start scroll
+	if(	SSD1306_WriteCommand(SSD1306_LEFT_HORIZONTAL_SCROLL)  	// send 0x26
+	||	SSD1306_WriteCommand(0x00)  							// send dummy
+	||	SSD1306_WriteCommand(start_row)  						// start page address
+	||	SSD1306_WriteCommand(0X00)  							// time interval 5 frames
+	||	SSD1306_WriteCommand(end_row)  							// end page address
+	||	SSD1306_WriteCommand(0X00)
+	||	SSD1306_WriteCommand(0XFF)
+	||	SSD1306_WriteCommand(SSD1306_ACTIVATE_SCROLL)) 			// start scroll
+	{
+		return HAL_ERROR;
+	}
+
+	return HAL_OK;
 }
 
-
-/* ************************************************************* *
- * @name		SSD1306_Stopscroll
- * @brief		stop the scroll
- *
- * @args
- * ************************************************************* */
-void SSD1306_Stopscroll(void)
+/** ************************************************************* *
+ * @brief       stop the scroll
+ * 
+ * ************************************************************* **/
+uint8_t SSD1306_Stopscroll(void)
 {
-	 SSD1306_WriteCommand(SSD1306_DEACTIVATE_SCROLL);
+	if(SSD1306_WriteCommand(SSD1306_DEACTIVATE_SCROLL)) return HAL_ERROR;
+
+	return HAL_OK;
 }
