@@ -9,8 +9,9 @@
  * 
  * ************************************************************* **/
 
+
 /* ------------------------------------------------------------- --
-   Includes
+   includes
 -- ------------------------------------------------------------- */
 #include "mpu6050.h"
 #include "config_file.h"
@@ -21,8 +22,111 @@
 #define TIMEOUT_I2C 10
 #endif
 
+
 /* ------------------------------------------------------------- --
-   Variables
+   defines
+-- ------------------------------------------------------------- */
+#define MPU6050_WHO_AM_I_REG 		0x75
+#define MPU6050_PWR_MGMT_1_REG 		0x6B
+#define MPU6050_SMPLRT_DIV_REG 		0x19
+#define MPU6050_ACCEL_CONFIG_REG 	0x1C
+#define MPU6050_ACCEL_XOUT_H_REG 	0x3B
+#define MPU6050_TEMP_OUT_H_REG 		0x41
+#define MPU6050_GYRO_CONFIG_REG 	0x1B
+#define MPU6050_GYRO_XOUT_H_REG 	0x43
+
+#ifndef MPU6050_ADDR
+#define MPU6050_ADDR 				(0x69 << 1) 	/* ( << 1 because of the R/W bit */
+#endif
+
+#define RAD_TO_DEG 					57.295779513082320876798154814105
+
+
+/* ------------------------------------------------------------- --
+   types
+-- ------------------------------------------------------------- */
+/* Accel full scale range settings */
+typedef enum
+{
+	MPU6050_AFS_2G 	= 0,
+	MPU6050_AFS_4G 	= 1,
+	MPU6050_AFS_8G 	= 2,
+	MPU6050_AFS_16G = 3
+}MPU6050_AccelFullScale;
+
+/* gyro full scale range settings */
+typedef enum
+{
+	MPU6050_GFS_250_DEG_S 	= 0,
+	MPU6050_GFS_500_DEG_S 	= 1,
+	MPU6050_GFS_1000_DEG_S 	= 2,
+	MPU6050_GFS_2000_DEG_S 	= 3
+}MPU6050_GyroFullScale;
+
+/* sample rate settings */
+typedef enum
+{							    /* Sample Rate = Gyroscope Output Rate / (1 + SMPLRT_DIV) */
+	MPU6050_SR_8KHZ = 1,	    /* Gyroscope Output Rate = 8kHz when the DLPF is disabled (DLPF_CFG= 0 or 7), and 1kHz when the DLPF is enabled */
+	MPU6050_SR_4KHZ = 3,
+	MPU6050_SR_2KHZ = 5,
+	MPU6050_SR_1KHZ = 7,
+}MPU6050_SampleRate;
+
+/* Kalman structure */
+typedef struct 
+{
+    double Q_angle;
+    double Q_bias;
+    double R_measure;
+    double angle;
+    double bias;
+    double P[2][2];
+} Kalman_t;
+
+/* configuration structure */
+typedef struct
+{
+	MPU6050_AccelFullScale AFS;
+	MPU6050_GyroFullScale GFS;
+	MPU6050_SampleRate SR;
+}MPU6050_config_t;
+
+/* MPU6050 handle structure */
+typedef struct 
+{
+    int16_t Accel_X_RAW;
+    int16_t Accel_Y_RAW;
+    int16_t Accel_Z_RAW;
+    double Ax;
+    double Ay;
+    double Az;
+
+    int16_t Gyro_X_RAW;
+    int16_t Gyro_Y_RAW;
+    int16_t Gyro_Z_RAW;
+    double Gx;
+    double Gy;
+    double Gz;
+
+    int16_t Temperature_RAW;
+    float Temperature;
+
+    double KalmanAngleX;
+    double KalmanAngleY;
+
+    MPU6050_config_t config;
+
+} MPU6050_t;
+
+
+/* ------------------------------------------------------------- --
+   private prototypes
+-- ------------------------------------------------------------- */
+double MPU6050_Kalman_getAngle(Kalman_t *Kalman, double newAngle, double newRate, double dt);
+
+
+/* ------------------------------------------------------------- --
+   variables
 -- ------------------------------------------------------------- */
 static uint32_t timer = 0;
 
@@ -60,9 +164,54 @@ const double Gyro_X_Y_Z_corrector = 16.4;
     FS_SEL = 2000->  16.4
 */
 
-/* ------------------------------------------------------------- --
-   Functions
--- ------------------------------------------------------------- */
+
+/* ============================================================= ==
+   private functions
+== ============================================================= */
+/** ************************************************************* *
+ * @brief       apply the kalman filter with the input args and
+ *              return the angle
+ * 
+ * @param       Kalman 
+ * @param       newAngle 
+ * @param       newRate 
+ * @param       dt 
+ * @return      double 
+ * ************************************************************* **/
+double MPU6050_Kalman_getAngle(Kalman_t *Kalman, double newAngle, double newRate, double dt) 
+{
+    double rate = newRate - Kalman->bias;
+    Kalman->angle += dt * rate;
+
+    Kalman->P[0][0] += dt * (dt * Kalman->P[1][1] - Kalman->P[0][1] - Kalman->P[1][0] + Kalman->Q_angle);
+    Kalman->P[0][1] -= dt * Kalman->P[1][1];
+    Kalman->P[1][0] -= dt * Kalman->P[1][1];
+    Kalman->P[1][1] += Kalman->Q_bias * dt;
+
+    double S = Kalman->P[0][0] + Kalman->R_measure;
+    double K[2];
+    K[0] = Kalman->P[0][0] / S;
+    K[1] = Kalman->P[1][0] / S;
+
+    double y = newAngle - Kalman->angle;
+    Kalman->angle += K[0] * y;
+    Kalman->bias += K[1] * y;
+
+    double P00_temp = Kalman->P[0][0];
+    double P01_temp = Kalman->P[0][1];
+
+    Kalman->P[0][0] -= K[0] * P00_temp;
+    Kalman->P[0][1] -= K[0] * P01_temp;
+    Kalman->P[1][0] -= K[1] * P00_temp;
+    Kalman->P[1][1] -= K[1] * P01_temp;
+
+    return Kalman->angle;
+};
+
+
+/* ============================================================= ==
+   public functions
+== ============================================================= */
 /** ************************************************************* *
  * @brief       init the MPU6050
  * 
@@ -91,32 +240,30 @@ uint8_t MPU6050_Init(void) {
     };
     MPU6050.config = config;
 
-
     /* check device ID WHO_AM_I */
-    if(HAL_I2C_Mem_Read(&hi2c1, MPU6050_ADDR, MPU6050_WHO_AM_I_REG, 1, &check, 1, TIMEOUT_I2C)) return HAL_ERROR;
+    if(HAL_I2C_Mem_Read(&hi2c1, MPU6050_ADDR, MPU6050_WHO_AM_I_REG, 1, &check, sizeof(data), TIMEOUT_I2C)) return HAL_ERROR;
 
     /* 0x68 will be returned by the sensor if everything goes well */
     if (check != (0x68)) return HAL_ERROR;
 
 	/* power management register 0X6B we should write all 0's to wake the sensor up */
 	data = 0x0;
-	if(HAL_I2C_Mem_Write(&hi2c1, MPU6050_ADDR, MPU6050_PWR_MGMT_1_REG, 1, &data, 1, TIMEOUT_I2C)) return HAL_ERROR;
+	if(HAL_I2C_Mem_Write(&hi2c1, MPU6050_ADDR, MPU6050_PWR_MGMT_1_REG, 1, &data, sizeof(data), TIMEOUT_I2C)) return HAL_ERROR;
 
 	/* Set DATA RATE of 1KHz by writing SMPLRT_DIV register */
 	data = (MPU6050.config.SR);
-	if(HAL_I2C_Mem_Write(&hi2c1, MPU6050_ADDR, MPU6050_SMPLRT_DIV_REG, 1, &data, 1, TIMEOUT_I2C)) return HAL_ERROR;
+	if(HAL_I2C_Mem_Write(&hi2c1, MPU6050_ADDR, MPU6050_SMPLRT_DIV_REG, 1, &data, sizeof(data), TIMEOUT_I2C)) return HAL_ERROR;
 
 	/* Set accelerometer configuration in ACCEL_CONFIG Register */
 	data = (MPU6050.config.AFS <<3);
-	if(HAL_I2C_Mem_Write(&hi2c1, MPU6050_ADDR, MPU6050_ACCEL_CONFIG_REG, 1, &data, 1, TIMEOUT_I2C)) return HAL_ERROR;
+	if(HAL_I2C_Mem_Write(&hi2c1, MPU6050_ADDR, MPU6050_ACCEL_CONFIG_REG, 1, &data, sizeof(data), TIMEOUT_I2C)) return HAL_ERROR;
 
 	/* Set Gyroscopic configuration in GYRO_CONFIG Register */
 	data = (MPU6050.config.GFS <<3);
-	if(HAL_I2C_Mem_Write(&hi2c1, MPU6050_ADDR, MPU6050_GYRO_CONFIG_REG, 1, &data, 1, TIMEOUT_I2C)) return HAL_ERROR;
+	if(HAL_I2C_Mem_Write(&hi2c1, MPU6050_ADDR, MPU6050_GYRO_CONFIG_REG, 1, &data, sizeof(data), TIMEOUT_I2C)) return HAL_ERROR;
 
 	return HAL_OK;
 }
-
 
 /** ************************************************************* *
  * @brief       read the accel data
@@ -128,7 +275,7 @@ uint8_t MPU6050_Read_Accel(void)
     uint8_t data[6];
 
     /* Read 6 BYTES of data starting from ACCEL_XOUT_H register */
-    if(HAL_I2C_Mem_Read(&hi2c1, MPU6050_ADDR, MPU6050_ACCEL_XOUT_H_REG, 1, data, 6, TIMEOUT_I2C)) return HAL_ERROR;
+    if(HAL_I2C_Mem_Read(&hi2c1, MPU6050_ADDR, MPU6050_ACCEL_XOUT_H_REG, 1, data, sizeof(data), TIMEOUT_I2C)) return HAL_ERROR;
 
     MPU6050.Accel_X_RAW = (int16_t) (data[0] << 8 | data[1]);
     MPU6050.Accel_Y_RAW = (int16_t) (data[2] << 8 | data[3]);
@@ -142,7 +289,6 @@ uint8_t MPU6050_Read_Accel(void)
     return HAL_OK;
 }
 
-
 /** ************************************************************* *
  * @brief       read the gyro data
  * 
@@ -153,7 +299,7 @@ uint8_t MPU6050_Read_Gyro(void)
     uint8_t data[6];
 
     // Read 6 BYTES of data starting from GYRO_XOUT_H register
-    if(HAL_I2C_Mem_Read(&hi2c1, MPU6050_ADDR, MPU6050_GYRO_XOUT_H_REG, 1, data, 6, TIMEOUT_I2C)) return HAL_ERROR;
+    if(HAL_I2C_Mem_Read(&hi2c1, MPU6050_ADDR, MPU6050_GYRO_XOUT_H_REG, 1, data, sizeof(data), TIMEOUT_I2C)) return HAL_ERROR;
 
     MPU6050.Gyro_X_RAW = (int16_t) (data[0] << 8 | data[1]);
     MPU6050.Gyro_Y_RAW = (int16_t) (data[2] << 8 | data[3]);
@@ -178,14 +324,13 @@ uint8_t MPU6050_Read_Temp(void)
     int16_t temp;
 
     // Read 2 BYTES of data starting from TEMP_OUT_H_REG register
-    if(HAL_I2C_Mem_Read(&hi2c1, MPU6050_ADDR, MPU6050_TEMP_OUT_H_REG, 1, data, 2, TIMEOUT_I2C)) return HAL_ERROR;
+    if(HAL_I2C_Mem_Read(&hi2c1, MPU6050_ADDR, MPU6050_TEMP_OUT_H_REG, 1, data, sizeof(data), TIMEOUT_I2C)) return HAL_ERROR;
 
     temp = (int16_t) (data[0] << 8 | data[1]);
     MPU6050.Temperature = (float) ((int16_t) temp / (float) 340.0 + (float) 36.53);
 
     return HAL_OK;
 }
-
 
 /** ************************************************************* *
  * @brief       read all
@@ -197,7 +342,7 @@ uint8_t MPU6050_Read_All(void)
     uint8_t data[14];
 
     // Read 14 BYTES of data starting from ACCEL_XOUT_H register
-    if(HAL_I2C_Mem_Read(&hi2c1, MPU6050_ADDR, MPU6050_ACCEL_XOUT_H_REG, 1, data, 14, TIMEOUT_I2C)) return HAL_ERROR;
+    if(HAL_I2C_Mem_Read(&hi2c1, MPU6050_ADDR, MPU6050_ACCEL_XOUT_H_REG, 1, data, sizeof(data), TIMEOUT_I2C)) return HAL_ERROR;
 
     /*< get accel >*/
     MPU6050.Accel_X_RAW = (int16_t) (data[0] << 8 | data[1]);
@@ -240,67 +385,35 @@ uint8_t MPU6050_Read_All_Kalman(void)
     // Kalman angle solve
     double dt = (double) (HAL_GetTick() - timer) / 1000;
     timer = HAL_GetTick();
+
     double roll;
-    double roll_sqrt = sqrt(
-            MPU6050.Accel_X_RAW * MPU6050.Accel_X_RAW + MPU6050.Accel_Z_RAW * MPU6050.Accel_Z_RAW);
+    double roll_sqrt = sqrt(MPU6050.Accel_X_RAW * MPU6050.Accel_X_RAW + MPU6050.Accel_Z_RAW * MPU6050.Accel_Z_RAW);
     if (roll_sqrt != 0.0) {
         roll = atan(MPU6050.Accel_Y_RAW / roll_sqrt) * RAD_TO_DEG;
-    } else {
+    } 
+	else 
+	{
         roll = 0.0;
     }
+
     double pitch = atan2(-MPU6050.Accel_X_RAW, MPU6050.Accel_Z_RAW) * RAD_TO_DEG;
-    if ((pitch < -90 && MPU6050.KalmanAngleY > 90) || (pitch > 90 && MPU6050.KalmanAngleY < -90)) {
+    if((pitch < -90 && MPU6050.KalmanAngleY > 90) 
+	|| (pitch > 90 && MPU6050.KalmanAngleY < -90)) 
+	{
         KalmanY.angle = pitch;
         MPU6050.KalmanAngleY = pitch;
-    } else {
+    } 
+	else 
+	{
         MPU6050.KalmanAngleY = MPU6050_Kalman_getAngle(&KalmanY, pitch, MPU6050.Gy, dt);
     }
-    if (fabs(MPU6050.KalmanAngleY) > 90)
-        MPU6050.Gx = -MPU6050.Gx;
+
+    if (fabs(MPU6050.KalmanAngleY) > 90) MPU6050.Gx = -MPU6050.Gx;
     MPU6050.KalmanAngleX = MPU6050_Kalman_getAngle(&KalmanX, roll, MPU6050.Gy, dt);
 
     return HAL_OK;
 }
 
-/** ************************************************************* *
- * @brief       apply the kalman filter with the input args and
- *              return the angle
- * 
- * @param       Kalman 
- * @param       newAngle 
- * @param       newRate 
- * @param       dt 
- * @return      double 
- * ************************************************************* **/
-double MPU6050_Kalman_getAngle(Kalman_t *Kalman, double newAngle, double newRate, double dt) 
-{
-    double rate = newRate - Kalman->bias;
-    Kalman->angle += dt * rate;
-
-    Kalman->P[0][0] += dt * (dt * Kalman->P[1][1] - Kalman->P[0][1] - Kalman->P[1][0] + Kalman->Q_angle);
-    Kalman->P[0][1] -= dt * Kalman->P[1][1];
-    Kalman->P[1][0] -= dt * Kalman->P[1][1];
-    Kalman->P[1][1] += Kalman->Q_bias * dt;
-
-    double S = Kalman->P[0][0] + Kalman->R_measure;
-    double K[2];
-    K[0] = Kalman->P[0][0] / S;
-    K[1] = Kalman->P[1][0] / S;
-
-    double y = newAngle - Kalman->angle;
-    Kalman->angle += K[0] * y;
-    Kalman->bias += K[1] * y;
-
-    double P00_temp = Kalman->P[0][0];
-    double P01_temp = Kalman->P[0][1];
-
-    Kalman->P[0][0] -= K[0] * P00_temp;
-    Kalman->P[0][1] -= K[0] * P01_temp;
-    Kalman->P[1][0] -= K[1] * P00_temp;
-    Kalman->P[1][1] -= K[1] * P01_temp;
-
-    return Kalman->angle;
-};
 
 /* ------------------------------------------------------------- --
    end of file
