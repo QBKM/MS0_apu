@@ -318,7 +318,7 @@ uint8_t MPU6050_Read_All(void)
  * ************************************************************* **/
 uint8_t MPU6050_Read_All_Kalman(void)
 {
-    MPU6050_Read_All();
+    if(MPU6050_Read_All()) return HAL_ERROR;
 
     // Kalman angle solve
     double dt = (double) (HAL_GetTick() - timer) / 1000;
