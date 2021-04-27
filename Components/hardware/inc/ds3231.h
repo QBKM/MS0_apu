@@ -45,7 +45,7 @@ uint8_t  DS3231_Read_All(void);
 uint8_t  DS3231_Read_Time(void);
 uint8_t  DS3231_Read_Temperature(void);
 uint8_t  DS3231_Set_Time(void);
-
+DS3231_t DS3231_Get_Struct(void);
 
 #endif /* __DS3231_H__ */
 /* ------------------------------------------------------------- --
