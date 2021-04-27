@@ -352,11 +352,11 @@ uint8_t SSD1306_Puts_Num16bits(int16_t number, FontDef_t* Font, SSD1306_COLOR_t 
 
 	if(number < 10)
 	{
-		sprintf(buffer, "0%d", number);	
+		snprintf(buffer, SSD1306_INT16_SIZE, "0%d", number);	
 	}
 	else
 	{
-		sprintf(buffer, "%d", number);
+		snprintf(buffer, SSD1306_INT16_SIZE, "%d", number);
 	}
 	
 	SSD1306_Puts(buffer, Font, color);
@@ -375,9 +375,8 @@ uint8_t SSD1306_Puts_Num16bits(int16_t number, FontDef_t* Font, SSD1306_COLOR_t 
 uint8_t SSD1306_Puts_float(float number, FontDef_t* Font, SSD1306_COLOR_t color)
 {
 	char buffer[10];
-	size_t max_size = 6;
 
-	snprintf(buffer, max_size, "%f", number);
+	snprintf(buffer, SSD1306_FLOAT_SIZE, "%f", number);
 	SSD1306_Puts(buffer, Font, color);
 
 	return *buffer;
