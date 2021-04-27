@@ -18,16 +18,16 @@
 /* ------------------------------------------------------------- --
    types
 -- ------------------------------------------------------------- */
-typedef struct HW_init_t
+typedef struct HW_status_t
 {
 	HAL_StatusTypeDef DS3231;
 	HAL_StatusTypeDef MPU6050;
 	HAL_StatusTypeDef BMP280;
 	HAL_StatusTypeDef SSD1306;
-}HW_init_t;
+}HW_status_t;
 
 
 /* ------------------------------------------------------------- --
    function prototypes
 -- ------------------------------------------------------------- */
-uint8_t ERR_MNGR_HW_init(HW_init_t HW_init);
+uint8_t ERR_MNGR_HW_init(HW_status_t HW_init);

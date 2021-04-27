@@ -20,7 +20,7 @@
 -- ------------------------------------------------------------- */
 uint32_t err_counter = 0;
 char err_logger[32][32] = {0};
-HW_init_t HW_init_log;
+HW_status_t HW_init_log;
 
 /* ------------------------------------------------------------- --
    private protoypes
@@ -61,7 +61,7 @@ void ERR_MNGR_push_log(const char* error)
  * @param       HW_init 
  * @return      uint8_t 
  * ************************************************************* **/
-uint8_t ERR_MNGR_HW_init(HW_init_t HW_init)
+uint8_t ERR_MNGR_HW_init(HW_status_t HW_init)
 {
     uint8_t init_error = err_counter;
 
