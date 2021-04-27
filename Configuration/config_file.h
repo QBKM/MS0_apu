@@ -9,9 +9,12 @@
  * 
  * ************************************************************* **/
 
-/* 	+-------------------+*/
-/*	| LIST OF CONSTANTS |*/
-/*	+-------------------+*/
+#ifndef __CONFIG_FILE_H__
+#define __CONFIG_FILE_H__
+
+/* 	+-------------------+ */
+/*	| LIST OF CONSTANTS | */
+/*	+-------------------+ */
 
 /**************************************************************** *
  * 	PERIPHERALS
@@ -38,3 +41,7 @@
 
 /* SSD1306 */
 #define SSD1306_ADDR		0x78  			/* SSD1306 address is 0x78 */   
+#define SSD1306_INT16_SIZE	9				/* SSD1306 max numbers of charater to display for 16bits number */
+#define SSD1306_FLOAT_SIZE	9				/* SSD1306 max numbers of charater to display for float number */
+
+#endif

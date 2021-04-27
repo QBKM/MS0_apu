@@ -1,21 +1,14 @@
 /* USER CODE BEGIN Header */
-/**
-  ******************************************************************************
-  * @file           : main.c
-  * @brief          : Main program body
-  ******************************************************************************
-  * @attention
-  *
-  * <h2><center>&copy; Copyright (c) 2021 STMicroelectronics.
-  * All rights reserved.</center></h2>
-  *
-  * This software component is licensed by ST under BSD 3-Clause license,
-  * the "License"; You may not use this file except in compliance with the
-  * License. You may obtain a copy of the License at:
-  *                        opensource.org/licenses/BSD-3-Clause
-  *
-  ******************************************************************************
-  */
+/** ************************************************************* *
+ * @file        main.c
+ * @brief       
+ * 
+ * @date        2021-04-26
+ * @author     Quentin Bakrim (quentin.bakrim@hotmail.fr)
+ * 
+ * Mines Space
+ * 
+ * ************************************************************* **/
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
@@ -30,6 +23,8 @@
 #include "bmp280.h"
 #include "ssd1306.h"
 #include "bitmap.h"
+#include "hmi.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -47,6 +42,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+HW_status_t HW_status;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -86,22 +82,74 @@ int main(void)
   MX_USART2_UART_Init();
   MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
-  	//DS3231_Init();
-	//MPU6050_Init();
-	//BMP280_Init();
-	SSD1306_Init();
 
-	SSD1306_DrawBitmap(0, 0, logo_ms0, 128, 64, SSD1306_COLOR_WHITE);
-	SSD1306_UpdateScreen();
+	HW_status_t HW_init =
+	{
+	.DS3231 	= DS3231_Init(),
+	.MPU6050 	= MPU6050_Init(),
+	.BMP280 	= BMP280_Init(),
+	.SSD1306 	= SSD1306_Init(),
+	};
+
+	/* check the errors ... TO DO */
+	ERR_MNGR_HW_init(HW_init);
+
+	HMI_OLED_display_bitmap(logo_ms0, 1000, ClearAfter);
+	HMI_OLED_display_init_log(HW_init, 1000, ClearAfter);
+	
+	HMI_OLED_display_data_log();
+
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
-  {
-	//DS3231_Read_All();
-	//MPU6050_Read_All();
-	//BMP280_Read_All();
+  {	 
+
+	if(DS3231_Read_All() == HAL_OK)
+	{
+		HW_status.DS3231 = HAL_OK;
+	 	DS3231_t TIME = DS3231_Get_Struct();
+		HMI_OLED_display_data_log_time(TIME);
+	}
+	else
+	{
+		HW_status.DS3231 = HAL_ERROR;
+		HMI_OLED_display_data_log_failed(20);
+	}
+
+	if(BMP280_Read_All() == HAL_OK)
+	{
+		if(HW_status.BMP280 == HAL_ERROR) BMP280_Init();
+
+		HW_status.BMP280 = HAL_OK;
+		BMP280_t PRESS = BMP280_Get_Struct();
+		HMI_OLED_display_data_log_press(PRESS);
+	}
+	else
+	{
+		HW_status.BMP280 = HAL_ERROR;
+		HMI_OLED_display_data_log_failed(30);
+	}
+
+
+	if(MPU6050_Read_All_Kalman() == HAL_OK)
+	{
+		if(HW_status.MPU6050 == HAL_ERROR) MPU6050_Init();
+
+		HW_status.MPU6050 = HAL_OK;
+		MPU6050_t ANGLE = MPU6050_Get_Struct();
+		HMI_OLED_display_data_log_angle(ANGLE);
+	}
+	else
+	{
+		HW_status.MPU6050 = HAL_ERROR;
+		HMI_OLED_display_data_log_failed(40);
+		HMI_OLED_display_data_log_failed(50);
+	}
+
+   SSD1306_UpdateScreen();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

@@ -1,5 +1,5 @@
 /** ************************************************************* *
- * @file        fonts.h
+ * @file        err_manager.h
  * @brief       
  * 
  * @date        2021-04-27
@@ -9,36 +9,25 @@
  * 
  * ************************************************************* **/
 
-#ifndef __FONTS_H__
-#define __FONTS_H__
-
 /* ------------------------------------------------------------- --
    includes
 -- ------------------------------------------------------------- */
-#include "string.h"
-#include "stdint.h"
+#include "stm32f3xx_hal.h"
+
 
 /* ------------------------------------------------------------- --
    types
 -- ------------------------------------------------------------- */
-typedef struct {
-	uint8_t FontWidth;    /*!< Font width in pixels */
-	uint8_t FontHeight;   /*!< Font height in pixels */
-	const uint16_t *data; /*!< Pointer to data font data array */
-} FontDef_t;
+typedef struct HW_status_t
+{
+	HAL_StatusTypeDef DS3231;
+	HAL_StatusTypeDef MPU6050;
+	HAL_StatusTypeDef BMP280;
+	HAL_StatusTypeDef SSD1306;
+}HW_status_t;
 
-typedef struct {
-	uint16_t Length;      /*!< String length in units of pixels */
-	uint16_t Height;      /*!< String height in units of pixels */
-} FONTS_SIZE_t;
 
 /* ------------------------------------------------------------- --
-   variables
+   function prototypes
 -- ------------------------------------------------------------- */
-extern FontDef_t Font_7x10;
-
-
-#endif
-/* ------------------------------------------------------------- --
-   end of file
--- ------------------------------------------------------------- */
+uint8_t ERR_MNGR_HW_init(HW_status_t HW_init);
