@@ -22,10 +22,6 @@
 /* ------------------------------------------------------------- --
    defines
 -- ------------------------------------------------------------- */
-/* SSD1306 size in pixels */
-#define SSD1306_WIDTH            			128
-#define SSD1306_HEIGHT           			64
-
 /* register addresses*/
 #define SSD1306_REG_CMD						0x00
 
