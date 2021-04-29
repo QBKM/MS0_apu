@@ -43,11 +43,17 @@
 
 /* USER CODE BEGIN PV */
 HW_status_t HW_status;
+uint32_t temp;
+uint32_t current_time = 0;
+uint32_t max_time = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
+void routine_DS3231(void);
+void routine_BMP280(void);
+void routine_MPU6050(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -94,11 +100,14 @@ int main(void)
 	/* check the errors ... TO DO */
 	ERR_MNGR_HW_init(HW_init);
 
+	/* init the OLED */
+	HMI_OLED_init();
+	/* display MS0 logo a start */
 	HMI_OLED_display_bitmap(logo_ms0, 1000, ClearAfter);
+	/* display the HW init log */
 	HMI_OLED_display_init_log(HW_init, 1000, ClearAfter);
-	
+	/* display the HW data log */
 	HMI_OLED_display_data_log();
-
 
   /* USER CODE END 2 */
 
@@ -106,50 +115,23 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {	 
+	  temp = HAL_GetTick();
+	/* DS3231 section */
+	routine_DS3231();
 
-	if(DS3231_Read_All() == HAL_OK)
-	{
-		HW_status.DS3231 = HAL_OK;
-	 	DS3231_t TIME = DS3231_Get_Struct();
-		HMI_OLED_display_data_log_time(TIME);
-	}
-	else
-	{
-		HW_status.DS3231 = HAL_ERROR;
-		HMI_OLED_display_data_log_failed(20);
-	}
+	/* BMP280 section */
+	routine_BMP280();
 
-	if(BMP280_Read_All() == HAL_OK)
-	{
-		if(HW_status.BMP280 == HAL_ERROR) BMP280_Init();
+	/* MPU6050 section */
+	routine_MPU6050();
 
-		HW_status.BMP280 = HAL_OK;
-		BMP280_t PRESS = BMP280_Get_Struct();
-		HMI_OLED_display_data_log_press(PRESS);
-	}
-	else
-	{
-		HW_status.BMP280 = HAL_ERROR;
-		HMI_OLED_display_data_log_failed(30);
-	}
+	/* send to the screen */
+	SSD1306_UpdateScreen();
+
+	current_time = HAL_GetTick() - temp;
+	if(current_time > max_time) max_time = current_time;
 
 
-	if(MPU6050_Read_All_Kalman() == HAL_OK)
-	{
-		if(HW_status.MPU6050 == HAL_ERROR) MPU6050_Init();
-
-		HW_status.MPU6050 = HAL_OK;
-		MPU6050_t ANGLE = MPU6050_Get_Struct();
-		HMI_OLED_display_data_log_angle(ANGLE);
-	}
-	else
-	{
-		HW_status.MPU6050 = HAL_ERROR;
-		HMI_OLED_display_data_log_failed(40);
-		HMI_OLED_display_data_log_failed(50);
-	}
-
-   SSD1306_UpdateScreen();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -200,6 +182,55 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+void routine_DS3231(void)
+{
+	if(DS3231_Read_All() == HAL_OK)
+	{
+		HW_status.DS3231 = HAL_OK;
+	 	DS3231_t TIME = DS3231_Get_Struct();
+		HMI_OLED_display_data_log_time(TIME);
+	}
+	else
+	{
+		HW_status.DS3231 = HAL_ERROR;
+		HMI_OLED_display_data_log_failed(20);
+	}
+}
+
+void routine_BMP280(void)
+{
+	if(BMP280_Read_All() == HAL_OK)
+	{
+		if(HW_status.BMP280 == HAL_ERROR) BMP280_Init();
+
+		HW_status.BMP280 = HAL_OK;
+		BMP280_t PRESS = BMP280_Get_Struct();
+		HMI_OLED_display_data_log_press(PRESS);
+	}
+	else
+	{
+		HW_status.BMP280 = HAL_ERROR;
+		HMI_OLED_display_data_log_failed(30);
+	}
+}
+
+void routine_MPU6050(void)
+{
+	if(MPU6050_Read_All_Kalman() == HAL_OK)
+	{
+		if(HW_status.MPU6050 == HAL_ERROR) MPU6050_Init();
+
+		HW_status.MPU6050 = HAL_OK;
+		MPU6050_t ANGLE = MPU6050_Get_Struct();
+		HMI_OLED_display_data_log_angle(ANGLE);
+	}
+	else
+	{
+		HW_status.MPU6050 = HAL_ERROR;
+		HMI_OLED_display_data_log_failed(40);
+		HMI_OLED_display_data_log_failed(50);
+	}
+}
 /* USER CODE END 4 */
 
 /**
