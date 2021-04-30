@@ -16,69 +16,176 @@
 #include "ssd1306.h"
 #include "hmi.h"
 
+#include "ds3231.h"
+#include "bmp280.h"
+#include "mpu6050.h"
+
 /* ------------------------------------------------------------- --
    defines
 -- ------------------------------------------------------------- */
-/* OLED lines position */
-#define HMI_OLED_LINE_1				(uint8_t)10
-#define HMI_OLED_LINE_2				(uint8_t)20
-#define HMI_OLED_LINE_3				(uint8_t)30
-#define HMI_OLED_LINE_4				(uint8_t)40
-#define HMI_OLED_LINE_5				(uint8_t)50
 
-/* OLED columns position */
-#define HMI_OLED_INIT_LOG_COLUMN	(uint8_t)(12*7)
-#define HMI_OLED_DATA_LOG_COLUMN	(uint8_t)(7*8)
-
-/* OLED columns for time diplay in data line */
-#define HMI_OLED_DATA_LOG_COLUMN_HOUR	(uint8_t)(7*8)
-#define HMI_OLED_DATA_LOG_COLUMN_DOT1	(uint8_t)(7*10)
-#define HMI_OLED_DATA_LOG_COLUMN_MIN	(uint8_t)(7*11)
-#define HMI_OLED_DATA_LOG_COLUMN_DOT2	(uint8_t)(7*13)
-#define HMI_OLED_DATA_LOG_COLUMN_SEC	(uint8_t)(7*14)
 
 /* ------------------------------------------------------------- --
    variables
 -- ------------------------------------------------------------- */
-uint8_t HMI_save_data_log_screen[SSD1306_WIDTH * SSD1306_HEIGHT / 8];
+HMI_Menu_t Menu;
 
 
 /* ============================================================= ==
    public functions
 == ============================================================= */
 /** ************************************************************* *
- * @brief       
+ * @brief       init the HMI with OLED
  * 
  * ************************************************************* **/
 void HMI_OLED_init(void)
 {
-	HMI_OLED_setup_data_log_save(HMI_save_data_log_screen);
+	SSD1306_Clear();
+	Frame 		= NO_FRAME;
+	Menu.Button	= NO_PUSH;
+	Menu.Line 	= HMI_OLED_LINE_2;
+}
+
+/** ************************************************************* *
+ * @brief       display the frame for running mode
+ * 
+ * ************************************************************* **/
+void HMI_OLED_display_running(void)
+{
+	SSD1306_Clear();
+	SSD1306_GotoXY(0, HMI_OLED_LINE_1);
+	SSD1306_Puts("The SW is running",&Font_7x10, SSD1306_COLOR_WHITE);
+	SSD1306_GotoXY(0, HMI_OLED_LINE_3);
+	SSD1306_Puts(">press middle btn ",&Font_7x10, SSD1306_COLOR_WHITE);
+	SSD1306_GotoXY(0, HMI_OLED_LINE_4);
+	SSD1306_Puts("   to open menu   ",&Font_7x10, SSD1306_COLOR_WHITE);
+
+	SSD1306_UpdateScreen();
+}
+
+/** ************************************************************* *
+ * @brief       check if the menu must be displayed and display it
+ * 
+ * ************************************************************* **/
+void HMI_OLED_check_menu(void)
+{
+	if(Menu.Button == PUSH_MIDDLE) 
+	{
+		if(Frame != MENU_FRAME)
+		{
+			Menu.Button = NO_PUSH;
+			Frame = MENU_FRAME;
+			HMI_OLED_display_menu();
+		};
+	}
+}
+
+/** ************************************************************* *
+ * @brief       display the menu frame
+ * 
+ * ************************************************************* **/
+void HMI_OLED_display_menu(void)
+{
+	SSD1306_Clear();
+
+	SSD1306_GotoXY(0, HMI_OLED_LINE_1);
+	SSD1306_Puts("====== MENU ======",&Font_7x10, SSD1306_COLOR_WHITE);
+	SSD1306_GotoXY(14, HMI_OLED_LINE_2);
+	SSD1306_Puts("Display DATA",&Font_7x10, SSD1306_COLOR_WHITE);
+	SSD1306_GotoXY(14, HMI_OLED_LINE_3);
+	SSD1306_Puts("Quit menu",&Font_7x10, SSD1306_COLOR_WHITE);
+	SSD1306_GotoXY(14, HMI_OLED_LINE_4);
+	SSD1306_Puts("Restart",&Font_7x10, SSD1306_COLOR_WHITE);
+
+	SSD1306_UpdateScreen();
 }
 
 
 /** ************************************************************* *
- * @brief       
+ * @brief       display the selector in menu
  * 
  * ************************************************************* **/
-void HMI_OLED_setup_data_log_save(uint8_t* save)
+void HMI_OLED_display_menu_selector(void)
 {
-	SSD1306_Fill (SSD1306_COLOR_BLACK);
-	SSD1306_GotoXY(0, 10);
-	SSD1306_Puts("==== DATA LOG ====", &Font_7x10, SSD1306_COLOR_WHITE);
+	SSD1306_GotoXY(0, Menu.Line);
+	SSD1306_Puts(">",&Font_7x10, SSD1306_COLOR_WHITE);
 
-	SSD1306_GotoXY(0, 20);
-	SSD1306_Puts("time   : ", &Font_7x10, SSD1306_COLOR_WHITE);
+	/* UP button */
+	if(Menu.Button == PUSH_UP)
+	{
+		Menu.Button = NO_PUSH;
+		SSD1306_GotoXY(0, Menu.Line);
+		if(Menu.Line < HMI_OLED_LINE_4) Menu.Line += HMI_OLED_LINE_NEXT;
+		SSD1306_Puts(" ",&Font_7x10, SSD1306_COLOR_WHITE);
+		SSD1306_GotoXY(0, Menu.Line);
+		SSD1306_Puts(">",&Font_7x10, SSD1306_COLOR_WHITE);
+	}
 
-	SSD1306_GotoXY(0, 30);
-	SSD1306_Puts("press  : ", &Font_7x10, SSD1306_COLOR_WHITE);
+	/* MIDDLE button */
+	if(Menu.Button == PUSH_BOTTOM)
+	{
+		Menu.Button = NO_PUSH;
+		SSD1306_GotoXY(0, Menu.Line);
+		if(Menu.Line > HMI_OLED_LINE_2) Menu.Line -= HMI_OLED_LINE_NEXT;
+		SSD1306_Puts(" ",&Font_7x10, SSD1306_COLOR_WHITE);
+		SSD1306_GotoXY(0, Menu.Line);
+		SSD1306_Puts(">",&Font_7x10, SSD1306_COLOR_WHITE);
+	}
 
-	SSD1306_GotoXY(0, 40);
-  	SSD1306_Puts("angleX : ", &Font_7x10, SSD1306_COLOR_WHITE);
-	SSD1306_GotoXY(0, 50);
-  	SSD1306_Puts("angleY : ", &Font_7x10, SSD1306_COLOR_WHITE);
+	/* BOTTOM button */
+	if(Menu.Button == PUSH_MIDDLE)
+	{
+		Menu.Button = NO_PUSH;
 
-	HMI_OLED_display_save_screen(save);
-	SSD1306_Fill (SSD1306_COLOR_BLACK);
+		/* select data log */
+		if(Menu.Line == HMI_OLED_LINE_2)
+		{
+			HMI_OLED_display_data_log();
+			Frame = DATA_LOG_FRAME;
+		}
+
+		/* select nunning frame */
+		else if(Menu.Line == HMI_OLED_LINE_3)
+		{
+			HMI_OLED_display_running();
+			Frame = NO_FRAME;
+		}
+
+		/* select reset SW */
+		else if(Menu.Line == HMI_OLED_LINE_4)
+		{
+			/* restart the software */
+			SCB->AIRCR = 0x05fa0004;
+		}
+	}
+
+}
+
+/** ************************************************************* *
+ * @brief       set the flag for up button
+ * 
+ * ************************************************************* **/
+void HMI_OLED_IT_btn_up(void)
+{
+	Menu.Button = PUSH_UP;
+}
+
+/** ************************************************************* *
+ * @brief       set the flag for middle button
+ * 
+ * ************************************************************* **/
+void HMI_OLED_IT_btn_middle(void)
+{
+	Menu.Button = PUSH_MIDDLE;
+}
+
+/** ************************************************************* *
+ * @brief       set the flag for bottom button
+ * 
+ * ************************************************************* **/
+void HMI_OLED_IT_btn_bottom(void)
+{
+	Menu.Button = PUSH_BOTTOM;
 }
 
 /** ************************************************************* *
@@ -200,7 +307,20 @@ void HMI_OLED_display_init_log_angle(HW_status_t HW_init)
  * ************************************************************* **/
 uint8_t HMI_OLED_display_data_log(void)
 {
-	HMI_OLED_display_restore_screen(HMI_save_data_log_screen);
+	SSD1306_Clear();
+	SSD1306_GotoXY(0, 10);
+	SSD1306_Puts("==== DATA LOG ====", &Font_7x10, SSD1306_COLOR_WHITE);
+
+	SSD1306_GotoXY(0, 20);
+	SSD1306_Puts("time   : ", &Font_7x10, SSD1306_COLOR_WHITE);
+
+	SSD1306_GotoXY(0, 30);
+	SSD1306_Puts("press  : ", &Font_7x10, SSD1306_COLOR_WHITE);
+
+	SSD1306_GotoXY(0, 40);
+  	SSD1306_Puts("angleX : ", &Font_7x10, SSD1306_COLOR_WHITE);
+	SSD1306_GotoXY(0, 50);
+  	SSD1306_Puts("angleY : ", &Font_7x10, SSD1306_COLOR_WHITE);
 
     /* update */
 	if(SSD1306_UpdateScreen()) return HAL_ERROR;
@@ -223,22 +343,22 @@ void HMI_OLED_display_data_log_failed(uint8_t LINE)
  * @brief       display the current time
  * 
  * ************************************************************* **/
-void HMI_OLED_display_data_log_time(DS3231_t TIME)
+void HMI_OLED_display_data_log_time(DS3231_t TIME, uint8_t LINE)
 {
-	SSD1306_GotoXY(HMI_OLED_DATA_LOG_COLUMN_DOT1, HMI_OLED_LINE_2);
+	SSD1306_GotoXY(HMI_OLED_DATA_LOG_COLUMN_DOT1, LINE);
 	SSD1306_Puts(":", &Font_7x10, SSD1306_COLOR_WHITE);
 
-	SSD1306_GotoXY(HMI_OLED_DATA_LOG_COLUMN_DOT2, HMI_OLED_LINE_2);
+	SSD1306_GotoXY(HMI_OLED_DATA_LOG_COLUMN_DOT2, LINE);
 	SSD1306_Puts(":", &Font_7x10, SSD1306_COLOR_WHITE);
 
 
-   	SSD1306_GotoXY(HMI_OLED_DATA_LOG_COLUMN_HOUR, HMI_OLED_LINE_2);
+   	SSD1306_GotoXY(HMI_OLED_DATA_LOG_COLUMN_HOUR, LINE);
    	SSD1306_Puts_Num16bits(TIME.Hour, &Font_7x10, SSD1306_COLOR_WHITE);
 
-   	SSD1306_GotoXY(HMI_OLED_DATA_LOG_COLUMN_MIN, HMI_OLED_LINE_2);
+   	SSD1306_GotoXY(HMI_OLED_DATA_LOG_COLUMN_MIN, LINE);
    	SSD1306_Puts_Num16bits(TIME.Min, &Font_7x10, SSD1306_COLOR_WHITE);
 
-   	SSD1306_GotoXY(HMI_OLED_DATA_LOG_COLUMN_SEC, HMI_OLED_LINE_2);
+   	SSD1306_GotoXY(HMI_OLED_DATA_LOG_COLUMN_SEC, LINE);
    	SSD1306_Puts_Num16bits(TIME.Sec, &Font_7x10, SSD1306_COLOR_WHITE);
 }
 
@@ -247,12 +367,12 @@ void HMI_OLED_display_data_log_time(DS3231_t TIME)
  * @brief       display the current pressure
  * 
  * ************************************************************* **/
-void HMI_OLED_display_data_log_press(BMP280_t PRESS)
+void HMI_OLED_display_data_log_press(BMP280_t PRESS, uint8_t LINE)
 {
-	SSD1306_GotoXY(HMI_OLED_DATA_LOG_COLUMN, HMI_OLED_LINE_3);
+	SSD1306_GotoXY(HMI_OLED_DATA_LOG_COLUMN, LINE);
 	SSD1306_Puts("        ", &Font_7x10, SSD1306_COLOR_WHITE);
 
-	SSD1306_GotoXY(HMI_OLED_DATA_LOG_COLUMN, HMI_OLED_LINE_3);
+	SSD1306_GotoXY(HMI_OLED_DATA_LOG_COLUMN, LINE);
 	SSD1306_Puts_float((PRESS.pressure/100), &Font_7x10, SSD1306_COLOR_WHITE);
 }
 
@@ -261,19 +381,19 @@ void HMI_OLED_display_data_log_press(BMP280_t PRESS)
  * @brief       display the current angle
  * 
  * ************************************************************* **/
-void HMI_OLED_display_data_log_angle(MPU6050_t ANGLE)
+void HMI_OLED_display_data_log_angle(MPU6050_t ANGLE, uint8_t LINEx, uint8_t LINEy)
 {
-	SSD1306_GotoXY(HMI_OLED_DATA_LOG_COLUMN, HMI_OLED_LINE_4);
+	SSD1306_GotoXY(HMI_OLED_DATA_LOG_COLUMN, LINEx);
 	SSD1306_Puts("        ", &Font_7x10, SSD1306_COLOR_WHITE);
 
-	SSD1306_GotoXY(HMI_OLED_DATA_LOG_COLUMN, HMI_OLED_LINE_4);
+	SSD1306_GotoXY(HMI_OLED_DATA_LOG_COLUMN, LINEx);
 	SSD1306_Puts_float(ANGLE.KalmanAngleX, &Font_7x10, SSD1306_COLOR_WHITE);
 
 
-	SSD1306_GotoXY(HMI_OLED_DATA_LOG_COLUMN, HMI_OLED_LINE_5);
+	SSD1306_GotoXY(HMI_OLED_DATA_LOG_COLUMN, LINEy);
 	SSD1306_Puts("        ", &Font_7x10, SSD1306_COLOR_WHITE);
 
-	SSD1306_GotoXY(HMI_OLED_DATA_LOG_COLUMN, HMI_OLED_LINE_5);
+	SSD1306_GotoXY(HMI_OLED_DATA_LOG_COLUMN, LINEy);
 	SSD1306_Puts_float(ANGLE.KalmanAngleY, &Font_7x10, SSD1306_COLOR_WHITE);
 }
 
