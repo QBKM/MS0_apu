@@ -56,7 +56,7 @@ void HMI_OLED_display_running(void)
 	SSD1306_GotoXY(0, HMI_OLED_LINE_1);
 	SSD1306_Puts("The SW is running",&Font_7x10, SSD1306_COLOR_WHITE);
 	SSD1306_GotoXY(0, HMI_OLED_LINE_3);
-	SSD1306_Puts(">press middle btn ",&Font_7x10, SSD1306_COLOR_WHITE);
+	SSD1306_Puts(">Press middle btn ",&Font_7x10, SSD1306_COLOR_WHITE);
 	SSD1306_GotoXY(0, HMI_OLED_LINE_4);
 	SSD1306_Puts("   to open menu   ",&Font_7x10, SSD1306_COLOR_WHITE);
 
