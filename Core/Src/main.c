@@ -13,7 +13,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "i2c.h"
-#include "usart.h"
+#include "tim.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -24,6 +24,9 @@
 #include "ssd1306.h"
 #include "bitmap.h"
 #include "hmi.h"
+
+#include "ds18b20.h"
+#include "delay.h"
 
 /* USER CODE END Includes */
 
@@ -42,15 +45,21 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-HW_status_t HW_status;
-uint32_t temp;
-uint32_t current_time = 0;
-uint32_t max_time = 0;
+HMI_FrameSelector_t Frame;
+
+DS3231_t TIME;
+BMP280_t PRESS;
+MPU6050_t ANGLE;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
+void routine_no_frame(void);
+void routine_menu_frame(void);
+void routine_data_log_frame(void);
+
 void routine_DS3231(void);
 void routine_BMP280(void);
 void routine_MPU6050(void);
@@ -85,8 +94,8 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_USART2_UART_Init();
   MX_I2C1_Init();
+  MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
 
 	HW_status_t HW_init =
@@ -100,14 +109,20 @@ int main(void)
 	/* check the errors ... TO DO */
 	ERR_MNGR_HW_init(HW_init);
 
+	/* delay_init */
+	delay_init();
+	DS18B20_Init();
+	float test = DS18B20_Get_Temp();
+
 	/* init the OLED */
 	HMI_OLED_init();
 	/* display MS0 logo a start */
 	HMI_OLED_display_bitmap(logo_ms0, 1000, ClearAfter);
 	/* display the HW init log */
-	HMI_OLED_display_init_log(HW_init, 1000, ClearAfter);
-	/* display the HW data log */
-	HMI_OLED_display_data_log();
+	HMI_OLED_display_init_log(HW_init, 2000, ClearAfter);
+
+	/* display a static message for */
+	HMI_OLED_display_running();
 
   /* USER CODE END 2 */
 
@@ -115,22 +130,16 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {	 
-	  temp = HAL_GetTick();
-	/* DS3231 section */
-	routine_DS3231();
+	/* check if the user open the menu */
+	HMI_OLED_check_menu();
 
-	/* BMP280 section */
-	routine_BMP280();
-
-	/* MPU6050 section */
-	routine_MPU6050();
-
-	/* send to the screen */
-	SSD1306_UpdateScreen();
-
-	current_time = HAL_GetTick() - temp;
-	if(current_time > max_time) max_time = current_time;
-
+	switch (Frame)
+	{
+	case NO_FRAME		: routine_no_frame(); 		break;
+	case MENU_FRAME		: routine_menu_frame(); 	break;
+	case DATA_LOG_FRAME	: routine_data_log_frame(); break;
+	default: break;
+	}
 
     /* USER CODE END WHILE */
 
@@ -182,55 +191,141 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+/** ************************************************************* *
+ * @brief       
+ * 
+ * @param       GPIO_Pin 
+ * ************************************************************* **/
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+	if(GPIO_Pin == GPIO_PIN_2) HMI_OLED_IT_btn_up();
+	if(GPIO_Pin == GPIO_PIN_3) HMI_OLED_IT_btn_middle();
+	if(GPIO_Pin == GPIO_PIN_4) HMI_OLED_IT_btn_bottom();
+}
+
+/** ************************************************************* *
+ * @brief       
+ * 
+ * ************************************************************* **/
+void routine_no_frame(void)
+{
+	routine_DS3231();
+	routine_BMP280();
+	routine_MPU6050();
+}
+
+
+/** ************************************************************* *
+ * @brief       
+ * 
+ * ************************************************************* **/
+void routine_menu_frame(void)
+{
+	routine_DS3231();
+	routine_BMP280();
+	routine_MPU6050();
+
+	HMI_OLED_display_menu_selector();
+	SSD1306_UpdateScreen();
+}
+
+
+/** ************************************************************* *
+ * @brief       
+ * 
+ * ************************************************************* **/
+void routine_data_log_frame(void)
+{
+	routine_DS3231();
+	routine_BMP280();
+	routine_MPU6050();
+
+	if(HW_status.DS3231 == HAL_OK)
+	{
+		HMI_OLED_display_data_log_time(TIME, HMI_OLED_LINE_2);
+	}
+	else
+	{
+		HMI_OLED_display_data_log_failed(HMI_OLED_LINE_2);
+	}
+
+	if(HW_status.BMP280 == HAL_OK)
+	{
+		HMI_OLED_display_data_log_press(PRESS, HMI_OLED_LINE_3);
+	}
+	else
+	{
+		HMI_OLED_display_data_log_failed(HMI_OLED_LINE_3);
+	}
+
+	if(HW_status.MPU6050 == HAL_OK)
+	{
+		HMI_OLED_display_data_log_angle(ANGLE, HMI_OLED_LINE_4, HMI_OLED_LINE_5);
+	}
+	else
+	{
+		HMI_OLED_display_data_log_failed(HMI_OLED_LINE_4);
+		HMI_OLED_display_data_log_failed(HMI_OLED_LINE_5);
+	}
+
+	SSD1306_UpdateScreen();
+}
+
+/** ************************************************************* *
+ * @brief       
+ * 
+ * ************************************************************* **/
 void routine_DS3231(void)
 {
 	if(DS3231_Read_All() == HAL_OK)
 	{
 		HW_status.DS3231 = HAL_OK;
-	 	DS3231_t TIME = DS3231_Get_Struct();
-		HMI_OLED_display_data_log_time(TIME);
+	 	TIME = DS3231_Get_Struct();
 	}
 	else
 	{
 		HW_status.DS3231 = HAL_ERROR;
-		HMI_OLED_display_data_log_failed(20);
 	}
 }
 
+/** ************************************************************* *
+ * @brief       
+ * 
+ * ************************************************************* **/
 void routine_BMP280(void)
 {
 	if(BMP280_Read_All() == HAL_OK)
 	{
 		if(HW_status.BMP280 == HAL_ERROR) BMP280_Init();
-
 		HW_status.BMP280 = HAL_OK;
-		BMP280_t PRESS = BMP280_Get_Struct();
-		HMI_OLED_display_data_log_press(PRESS);
+		PRESS = BMP280_Get_Struct();
 	}
 	else
 	{
 		HW_status.BMP280 = HAL_ERROR;
-		HMI_OLED_display_data_log_failed(30);
 	}
 }
 
+
+/** ************************************************************* *
+ * @brief       
+ * 
+ * ************************************************************* **/
 void routine_MPU6050(void)
 {
 	if(MPU6050_Read_All_Kalman() == HAL_OK)
 	{
 		if(HW_status.MPU6050 == HAL_ERROR) MPU6050_Init();
-
 		HW_status.MPU6050 = HAL_OK;
-		MPU6050_t ANGLE = MPU6050_Get_Struct();
-		HMI_OLED_display_data_log_angle(ANGLE);
+		ANGLE = MPU6050_Get_Struct();
 	}
 	else
 	{
 		HW_status.MPU6050 = HAL_ERROR;
-		HMI_OLED_display_data_log_failed(40);
-		HMI_OLED_display_data_log_failed(50);
 	}
 }
+
 /* USER CODE END 4 */
 
 /**
