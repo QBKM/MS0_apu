@@ -52,6 +52,8 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define OneWire_Pin GPIO_PIN_0
 #define OneWire_GPIO_Port GPIOF
+#define RST_DS3231_Pin GPIO_PIN_1
+#define RST_DS3231_GPIO_Port GPIOF
 #define BTN_1_Pin GPIO_PIN_2
 #define BTN_1_GPIO_Port GPIOA
 #define BTN_1_EXTI_IRQn EXTI2_TSC_IRQn
