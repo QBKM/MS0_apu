@@ -30,6 +30,8 @@ static void Set_Pin_Input(void);
 static uint8_t DS18B20_Write(uint8_t data);
 static uint8_t DS18B20_Read(void);
 
+DS18B20_t DS18B20;
+
 /* ============================================================= ==
    private functions
 == ============================================================= */
@@ -130,7 +132,6 @@ static uint8_t DS18B20_Read(void)
  * ************************************************************* **/
 uint8_t DS18B20_Init(void)
 {
-    uint8_t Response = 0;
 	Set_Pin_Output();   // set the pin as output
 	HAL_GPIO_WritePin (DS18B20_PORT, GPIO_PIN_0, 0);  // pull the pin low
 	delay_us (480);   // delay according to datasheet
@@ -138,12 +139,11 @@ uint8_t DS18B20_Init(void)
 	Set_Pin_Input();    // set the pin as input
 	delay_us (80);    // delay according to datasheet
 
-	if (!(HAL_GPIO_ReadPin (DS18B20_PORT, DS18B20_PIN))) Response = 1;    // if the pin is low i.e the presence pulse is detected
-	else Response = -1;
+	if(HAL_GPIO_ReadPin (DS18B20_PORT, DS18B20_PIN)) return HAL_ERROR;    // if the pin is low i.e the presence pulse is detected
 
 	delay_us (400); // 480 us delay totally.
 
-	return Response;
+	return HAL_OK;
 }
 
 
@@ -155,8 +155,6 @@ uint8_t DS18B20_Init(void)
 uint8_t DS18B20_Get_Temp(void)
 {
     uint8_t Presence;
-    uint8_t Temp_byte1;
-    uint8_t Temp_byte2;
 
     Presence = DS18B20_Init ();
     HAL_Delay (1);
@@ -169,10 +167,15 @@ uint8_t DS18B20_Get_Temp(void)
     DS18B20_Write (0xCC);  // skip ROM
     DS18B20_Write (0xBE);  // Read Scratch-pad
 
-    Temp_byte1 = DS18B20_Read();
-    Temp_byte2 = DS18B20_Read();
+    DS18B20.LSB = DS18B20_Read();
+    DS18B20.MSB = DS18B20_Read();
 
-    uint16_t byte3 = (Temp_byte2<<8 | Temp_byte1);
+    DS18B20.temperature = ((DS18B20.LSB<<8 | DS18B20.MSB)/16);
 
     return Presence;
+}
+
+DS18B20_t DS18B20_Get_Struct()
+{
+	return DS18B20;
 }

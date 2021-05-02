@@ -50,6 +50,7 @@ HMI_FrameSelector_t Frame;
 DS3231_t TIME;
 BMP280_t PRESS;
 MPU6050_t ANGLE;
+DS18B20_t TEMP;
 
 /* USER CODE END PV */
 
@@ -63,6 +64,7 @@ void routine_data_log_frame(void);
 void routine_DS3231(void);
 void routine_BMP280(void);
 void routine_MPU6050(void);
+void routine_DS18B20(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -103,7 +105,8 @@ int main(void)
 	.DS3231 	= DS3231_Init(),
 	.MPU6050 	= MPU6050_Init(),
 	.BMP280 	= BMP280_Init(),
-	.SSD1306 	= SSD1306_Init(),
+	.SSD1306 	= SSD1306_Init()
+	/* .DS18B20	= DS18B20_Init()*/
 	};
 
 	/* check the errors ... TO DO */
@@ -111,8 +114,6 @@ int main(void)
 
 	/* delay_init */
 	delay_init();
-	DS18B20_Init();
-	float test = DS18B20_Get_Temp();
 
 	/* init the OLED */
 	HMI_OLED_init();
@@ -213,6 +214,7 @@ void routine_no_frame(void)
 	routine_DS3231();
 	routine_BMP280();
 	routine_MPU6050();
+	//routine_DS18B20();
 }
 
 
@@ -225,6 +227,7 @@ void routine_menu_frame(void)
 	routine_DS3231();
 	routine_BMP280();
 	routine_MPU6050();
+	//routine_DS18B20();
 
 	HMI_OLED_display_menu_selector();
 	SSD1306_UpdateScreen();
@@ -240,6 +243,7 @@ void routine_data_log_frame(void)
 	routine_DS3231();
 	routine_BMP280();
 	routine_MPU6050();
+	//routine_DS18B20();
 
 	if(HW_status.DS3231 == HAL_OK)
 	{
@@ -323,6 +327,24 @@ void routine_MPU6050(void)
 	else
 	{
 		HW_status.MPU6050 = HAL_ERROR;
+	}
+}
+
+/** ************************************************************* *
+ * @brief       
+ * 
+ * ************************************************************* **/
+void routine_DS18B20(void)
+{
+	if(DS18B20_Get_Temp() == HAL_OK)
+	{
+		if(HW_status.DS18B20 == HAL_ERROR) DS18B20_Init();
+		HW_status.DS18B20 = HAL_OK;
+		TEMP = DS18B20_Get_Struct();
+	}
+	else
+	{
+		HW_status.DS18B20 = HAL_ERROR;
 	}
 }
 

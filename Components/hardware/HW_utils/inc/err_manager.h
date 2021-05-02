@@ -27,6 +27,7 @@ typedef struct HW_status_t
 	HAL_StatusTypeDef MPU6050;
 	HAL_StatusTypeDef BMP280;
 	HAL_StatusTypeDef SSD1306;
+	HAL_StatusTypeDef DS18B20;
 }HW_status_t;
 
 
