@@ -9,17 +9,24 @@
  * 
  * ************************************************************* **/
 
+/* ------------------------------------------------------------- --
+   include
+-- ------------------------------------------------------------- */
 #include "tca6408a.h"
 #include "config_file.h"
 #include "i2c.h"
 
+
+/* ------------------------------------------------------------- --
+   defines
+-- ------------------------------------------------------------- */
 #ifndef TIMEOUT_I2C
 #define TIMEOUT_I2C 10
 #endif
 
 /* TCA6408A address */
 #ifndef TCA6408A_ADDR
-#define TCA6408A_ADDR 0x21
+#define TCA6408A_ADDR (0x20 << 1)
 #endif
 
 /*  register map */
@@ -28,58 +35,154 @@
 #define TCA6408A_POLARITY               0x02
 #define TCA6408A_CONFIG                 0x03
 
-/* TCA6408A masks */
-#define TCA6408A_PIN0                   0x01
-#define TCA6408A_PIN1                   0x02
-#define TCA6408A_PIN2                   0x04
-#define TCA6408A_PIN3                   0x08
-#define TCA6408A_PIN4                   0x10
-#define TCA6408A_PIN5                   0x20
-#define TCA6408A_PIN6                   0x40
-#define TCA6408A_PIN7                   0x80
 
-typedef enum PIN_STATE_t
-{
-    HIGH,
-    LOW
-}PIN_STATE_t;
-
+/* ------------------------------------------------------------- --
+   types
+-- ------------------------------------------------------------- */
 typedef struct TCA6408A_t
 {
-    PIN_STATE_t PIN_0;
-    PIN_STATE_t PIN_1;
-    PIN_STATE_t PIN_2;
-    PIN_STATE_t PIN_3;
-    PIN_STATE_t PIN_4;
-    PIN_STATE_t PIN_5;
-    PIN_STATE_t PIN_6;
-    PIN_STATE_t PIN_7;
+    uint8_t PIN_state;
+    uint8_t MODE_state;
 }TCA6408A_t;
 
+
+/* ------------------------------------------------------------- --
+   variables
+-- ------------------------------------------------------------- */
 TCA6408A_t TCA6408A;
 
+
+/* ============================================================= ==
+   public functions
+== ============================================================= */
 /** ************************************************************* *
- * @brief       
+ * @brief       init the TCA6408A
  * 
  * @return      uint8_t 
  * ************************************************************* **/
 uint8_t TCA6408A_Init(void)
 {
+    uint8_t data[1];
+
     TCA6408A_t temp = 
     {
-        .PIN_0 = LOW,
-        .PIN_1 = LOW,
-        .PIN_2 = LOW,
-        .PIN_3 = LOW,
-        .PIN_4 = LOW,
-        .PIN_5 = LOW,
-        .PIN_6 = LOW,
-        .PIN_7 = LOW
+        .PIN_state  = 0xFF,     /* All pin to low */
+        .MODE_state = 0x00      /* All mode to output */
     };
     TCA6408A = temp;
+    
+    /* send to i2c */
+    data[0] = TCA6408A.MODE_state;
+    if(HAL_I2C_Mem_Write(&hi2c1, TCA6408A_ADDR, TCA6408A_CONFIG, 1, data, sizeof(data), TIMEOUT_I2C)) return HAL_ERROR;
 
-    //if(HAL_I2C_Mem_Read(&hi2c1, BMP280_ADDR<<1, BMP280_REG_ID, 1, &check, 1, TIMEOUT_I2C)) return HAL_ERROR;
-
+    data[0] = TCA6408A.PIN_state;
+    if(HAL_I2C_Mem_Write(&hi2c1, (TCA6408A_ADDR), TCA6408A_OUTPUT, 1, data, sizeof(data), TIMEOUT_I2C)) return HAL_ERROR;
 
     return HAL_OK;
 }
+
+
+/** ************************************************************* *
+ * @brief       set the mode for a pin
+ * 
+ * @param       PIN 
+ * @param       MODE 
+ * @return      uint8_t 
+ * ************************************************************* **/
+uint8_t TCA6408A_Set_Mode(uint8_t PIN, MODE_STATE_t MODE)
+{
+    uint8_t data[1];
+
+    /* apply the pin mask */
+    if(MODE == INPUT)   TCA6408A.MODE_state |= PIN;
+    if(MODE == OUTPUT)  TCA6408A.MODE_state &= ~PIN;
+
+    /* send to i2c */
+    if(HAL_I2C_Mem_Write(&hi2c1, TCA6408A_ADDR, TCA6408A_CONFIG, 1, data, sizeof(data), TIMEOUT_I2C)) return HAL_ERROR;
+
+    return HAL_OK;
+}
+
+
+/** ************************************************************* *
+ * @brief       write a pin value
+ * 
+ * @param       PIN 
+ * @param       STATE 
+ * @return      uint8_t 
+ * ************************************************************* **/
+uint8_t TCA6408A_Write_Pin(uint8_t PIN, PIN_STATE_t STATE)
+{
+    uint8_t data[1];
+
+    /* apply the pin mask */
+    if(STATE == HIGH) TCA6408A.PIN_state |= PIN;
+    if(STATE == LOW)  TCA6408A.PIN_state &= ~PIN;
+    data[0] = TCA6408A.PIN_state;
+
+    /* send to i2c */
+    if(HAL_I2C_Mem_Write(&hi2c1, TCA6408A_ADDR, TCA6408A_OUTPUT, 1, data, sizeof(data), TIMEOUT_I2C)) return HAL_ERROR;
+
+    return HAL_OK;
+}
+
+
+/** ************************************************************* *
+ * @brief       write all pins values
+ * 
+ * @param       PINS 
+ * @return      uint8_t 
+ * ************************************************************* **/
+uint8_t TCA6408A_Write_Pin_All(uint8_t PINS)
+{
+    uint8_t data[1];
+
+    /* update the pins status with the new values */
+    TCA6408A.PIN_state = PINS;
+    data[0] = TCA6408A.PIN_state;
+
+    /* send to i2c */
+    if(HAL_I2C_Mem_Write(&hi2c1, TCA6408A_ADDR, TCA6408A_OUTPUT, 1, data, sizeof(data), TIMEOUT_I2C)) return HAL_ERROR;
+    
+    return HAL_OK;
+}
+
+
+/** ************************************************************* *
+ * @brief       read a pin value
+ * 
+ * @param       PIN 
+ * @return      uint8_t 
+ * ************************************************************* **/
+uint8_t TCA6408A_Read_Pin(uint8_t PIN)
+{
+    uint8_t data[1];
+
+    /* read all the pin and select the good one */
+    if(TCA6408A_Read_Pin_All()) return 0xFF;
+    data[0] = TCA6408A.PIN_state &= ~PIN;
+
+    return data[0];
+}
+
+
+/** ************************************************************* *
+ * @brief       read all pins values
+ * 
+ * @return      uint8_t 
+ * ************************************************************* **/
+uint8_t TCA6408A_Read_Pin_All(void)
+{
+    uint8_t data[1];
+
+    /* read the i2c */
+    if(HAL_I2C_Mem_Read(&hi2c1, TCA6408A_ADDR, TCA6408A_INPUT, 1, data, sizeof(data), TIMEOUT_I2C)) return HAL_ERROR;
+    TCA6408A.PIN_state = data[0];
+
+    return HAL_OK;
+}
+
+
+/* ------------------------------------------------------------- --
+   end of file
+-- ------------------------------------------------------------- */

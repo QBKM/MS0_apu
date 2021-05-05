@@ -45,7 +45,7 @@
 #define SSD1306_FLOAT_SIZE	9				/* SSD1306 max numbers of charater to display for float number */
 
 /* TCA6408A */
-#define TCA6408A_ADDR       0x21            /* TCA6408A address is 0x21 */
+#define TCA6408A_ADDR       (0x20 << 1)     /* TCA6408A address is 0x21 */
 
 
 #endif
