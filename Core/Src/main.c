@@ -22,6 +22,7 @@
 #include "mpu6050.h"
 #include "bmp280.h"
 #include "ssd1306.h"
+#include "tca6408a.h"
 #include "bitmap.h"
 #include "hmi.h"
 
@@ -105,8 +106,9 @@ int main(void)
 	.DS3231 	= DS3231_Init(),
 	.MPU6050 	= MPU6050_Init(),
 	.BMP280 	= BMP280_Init(),
-	.SSD1306 	= SSD1306_Init()
+	.SSD1306 	= SSD1306_Init(),
 	/* .DS18B20	= DS18B20_Init()*/
+	.TCA6408A	= TCA6408A_Init()
 	};
 
 	/* check the errors ... TO DO */
