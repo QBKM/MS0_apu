@@ -13,7 +13,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "i2c.h"
-#include "usart.h"
+#include "tim.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -22,8 +22,12 @@
 #include "mpu6050.h"
 #include "bmp280.h"
 #include "ssd1306.h"
+#include "tca6408a.h"
 #include "bitmap.h"
 #include "hmi.h"
+
+#include "ds18b20.h"
+#include "delay.h"
 
 /* USER CODE END Includes */
 
@@ -42,12 +46,26 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-HW_status_t HW_status;
+HMI_FrameSelector_t Frame;
+
+DS3231_t TIME;
+BMP280_t PRESS;
+MPU6050_t ANGLE;
+DS18B20_t TEMP;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
+void routine_no_frame(void);
+void routine_menu_frame(void);
+void routine_data_log_frame(void);
+
+void routine_DS3231(void);
+void routine_BMP280(void);
+void routine_MPU6050(void);
+void routine_DS18B20(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -79,8 +97,8 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_USART2_UART_Init();
   MX_I2C1_Init();
+  MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
 
 	HW_status_t HW_init =
@@ -89,16 +107,25 @@ int main(void)
 	.MPU6050 	= MPU6050_Init(),
 	.BMP280 	= BMP280_Init(),
 	.SSD1306 	= SSD1306_Init(),
+	/* .DS18B20	= DS18B20_Init()*/
+	.TCA6408A	= TCA6408A_Init()
 	};
 
 	/* check the errors ... TO DO */
 	ERR_MNGR_HW_init(HW_init);
 
-	HMI_OLED_display_bitmap(logo_ms0, 1000, ClearAfter);
-	HMI_OLED_display_init_log(HW_init, 1000, ClearAfter);
-	
-	HMI_OLED_display_data_log();
+	/* delay_init */
+	delay_init();
 
+	/* init the OLED */
+	HMI_OLED_init();
+	/* display MS0 logo a start */
+	HMI_OLED_display_bitmap(logo_ms0, 1000, ClearAfter);
+	/* display the HW init log */
+	HMI_OLED_display_init_log(HW_init, 2000, ClearAfter);
+
+	/* display a static message for */
+	HMI_OLED_display_running();
 
   /* USER CODE END 2 */
 
@@ -106,50 +133,17 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {	 
+	/* check if the user open the menu */
+	HMI_OLED_check_menu();
 
-	if(DS3231_Read_All() == HAL_OK)
+	switch (Frame)
 	{
-		HW_status.DS3231 = HAL_OK;
-	 	DS3231_t TIME = DS3231_Get_Struct();
-		HMI_OLED_display_data_log_time(TIME);
-	}
-	else
-	{
-		HW_status.DS3231 = HAL_ERROR;
-		HMI_OLED_display_data_log_failed(20);
+	case NO_FRAME		: routine_no_frame(); 		break;
+	case MENU_FRAME		: routine_menu_frame(); 	break;
+	case DATA_LOG_FRAME	: routine_data_log_frame(); break;
+	default: break;
 	}
 
-	if(BMP280_Read_All() == HAL_OK)
-	{
-		if(HW_status.BMP280 == HAL_ERROR) BMP280_Init();
-
-		HW_status.BMP280 = HAL_OK;
-		BMP280_t PRESS = BMP280_Get_Struct();
-		HMI_OLED_display_data_log_press(PRESS);
-	}
-	else
-	{
-		HW_status.BMP280 = HAL_ERROR;
-		HMI_OLED_display_data_log_failed(30);
-	}
-
-
-	if(MPU6050_Read_All_Kalman() == HAL_OK)
-	{
-		if(HW_status.MPU6050 == HAL_ERROR) MPU6050_Init();
-
-		HW_status.MPU6050 = HAL_OK;
-		MPU6050_t ANGLE = MPU6050_Get_Struct();
-		HMI_OLED_display_data_log_angle(ANGLE);
-	}
-	else
-	{
-		HW_status.MPU6050 = HAL_ERROR;
-		HMI_OLED_display_data_log_failed(40);
-		HMI_OLED_display_data_log_failed(50);
-	}
-
-   SSD1306_UpdateScreen();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -200,6 +194,162 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+/** ************************************************************* *
+ * @brief       
+ * 
+ * @param       GPIO_Pin 
+ * ************************************************************* **/
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+	if(GPIO_Pin == GPIO_PIN_2) HMI_OLED_IT_btn_up();
+	if(GPIO_Pin == GPIO_PIN_3) HMI_OLED_IT_btn_middle();
+	if(GPIO_Pin == GPIO_PIN_4) HMI_OLED_IT_btn_bottom();
+}
+
+/** ************************************************************* *
+ * @brief       
+ * 
+ * ************************************************************* **/
+void routine_no_frame(void)
+{
+	routine_DS3231();
+	routine_BMP280();
+	routine_MPU6050();
+	//routine_DS18B20();
+}
+
+
+/** ************************************************************* *
+ * @brief       
+ * 
+ * ************************************************************* **/
+void routine_menu_frame(void)
+{
+	routine_DS3231();
+	routine_BMP280();
+	routine_MPU6050();
+	//routine_DS18B20();
+
+	HMI_OLED_display_menu_selector();
+	SSD1306_UpdateScreen();
+}
+
+
+/** ************************************************************* *
+ * @brief       
+ * 
+ * ************************************************************* **/
+void routine_data_log_frame(void)
+{
+	routine_DS3231();
+	routine_BMP280();
+	routine_MPU6050();
+	//routine_DS18B20();
+
+	if(HW_status.DS3231 == HAL_OK)
+	{
+		HMI_OLED_display_data_log_time(TIME, HMI_OLED_LINE_2);
+	}
+	else
+	{
+		HMI_OLED_display_data_log_failed(HMI_OLED_LINE_2);
+	}
+
+	if(HW_status.BMP280 == HAL_OK)
+	{
+		HMI_OLED_display_data_log_press(PRESS, HMI_OLED_LINE_3);
+	}
+	else
+	{
+		HMI_OLED_display_data_log_failed(HMI_OLED_LINE_3);
+	}
+
+	if(HW_status.MPU6050 == HAL_OK)
+	{
+		HMI_OLED_display_data_log_angle(ANGLE, HMI_OLED_LINE_4, HMI_OLED_LINE_5);
+	}
+	else
+	{
+		HMI_OLED_display_data_log_failed(HMI_OLED_LINE_4);
+		HMI_OLED_display_data_log_failed(HMI_OLED_LINE_5);
+	}
+
+	SSD1306_UpdateScreen();
+}
+
+/** ************************************************************* *
+ * @brief       
+ * 
+ * ************************************************************* **/
+void routine_DS3231(void)
+{
+	if(DS3231_Read_All() == HAL_OK)
+	{
+		HW_status.DS3231 = HAL_OK;
+	 	TIME = DS3231_Get_Struct();
+	}
+	else
+	{
+		HW_status.DS3231 = HAL_ERROR;
+	}
+}
+
+/** ************************************************************* *
+ * @brief       
+ * 
+ * ************************************************************* **/
+void routine_BMP280(void)
+{
+	if(BMP280_Read_All() == HAL_OK)
+	{
+		if(HW_status.BMP280 == HAL_ERROR) BMP280_Init();
+		HW_status.BMP280 = HAL_OK;
+		PRESS = BMP280_Get_Struct();
+	}
+	else
+	{
+		HW_status.BMP280 = HAL_ERROR;
+	}
+}
+
+
+/** ************************************************************* *
+ * @brief       
+ * 
+ * ************************************************************* **/
+void routine_MPU6050(void)
+{
+	if(MPU6050_Read_All_Kalman() == HAL_OK)
+	{
+		if(HW_status.MPU6050 == HAL_ERROR) MPU6050_Init();
+		HW_status.MPU6050 = HAL_OK;
+		ANGLE = MPU6050_Get_Struct();
+	}
+	else
+	{
+		HW_status.MPU6050 = HAL_ERROR;
+	}
+}
+
+/** ************************************************************* *
+ * @brief       
+ * 
+ * ************************************************************* **/
+void routine_DS18B20(void)
+{
+	if(DS18B20_Get_Temp() == HAL_OK)
+	{
+		if(HW_status.DS18B20 == HAL_ERROR) DS18B20_Init();
+		HW_status.DS18B20 = HAL_OK;
+		TEMP = DS18B20_Get_Struct();
+	}
+	else
+	{
+		HW_status.DS18B20 = HAL_ERROR;
+	}
+}
+
 /* USER CODE END 4 */
 
 /**

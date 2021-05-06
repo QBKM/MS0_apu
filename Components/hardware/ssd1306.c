@@ -55,10 +55,6 @@ typedef struct
 -- ------------------------------------------------------------- */
 SSD1306_t SSD1306;
 
-/* screen buffer */
-static uint8_t SSD1306_Buffer[SSD1306_WIDTH * SSD1306_HEIGHT / 8];
-
-
 /* ------------------------------------------------------------- --
    Private prototypes
 -- ------------------------------------------------------------- */
@@ -77,7 +73,7 @@ uint8_t SSD1306_WriteCommand(uint8_t cmd)
 {
 	uint8_t data[2] = {SSD1306_REG_CMD, cmd};
 
-	if(HAL_I2C_Master_Transmit(&hi2c1, SSD1306_ADDR, data, 2, HAL_MAX_DELAY)) return HAL_ERROR;
+	if(HAL_I2C_Master_Transmit(&hi2c1, SSD1306_ADDR, data, 2, TIMEOUT_I2C)) return HAL_ERROR;
 	return HAL_OK;
 }	
 

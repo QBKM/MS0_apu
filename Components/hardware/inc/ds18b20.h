@@ -1,40 +1,37 @@
 /** ************************************************************* *
- * @file        err_manager.h
+ * @file        ds18b20.h
  * @brief       
  * 
- * @date        2021-04-27
+ * @date        2021-04-30
  * @author      Quentin Bakrim (quentin.bakrim@hotmail.fr)
  * 
  * Mines Space
  * 
  * ************************************************************* **/
 
-#ifndef __ERR_MNGR__
-#define __ERR_MNGR__
+#ifndef __DS18B29__
+#define __DS18B29__
 
 /* ------------------------------------------------------------- --
    includes
 -- ------------------------------------------------------------- */
-#include "stm32f3xx_hal.h"
-
+#include "delay.h"
 
 /* ------------------------------------------------------------- --
    types
 -- ------------------------------------------------------------- */
-typedef struct HW_status_t
-{
-	HAL_StatusTypeDef DS3231;
-	HAL_StatusTypeDef MPU6050;
-	HAL_StatusTypeDef BMP280;
-	HAL_StatusTypeDef SSD1306;
-	HAL_StatusTypeDef DS18B20;
-	HAL_StatusTypeDef TCA6408A;
-}HW_status_t;
-
+typedef struct DS18B20_t{
+	uint8_t LSB;
+    uint8_t MSB;
+	float temperature;
+}DS18B20_t;
 
 /* ------------------------------------------------------------- --
    function prototypes
 -- ------------------------------------------------------------- */
-uint8_t ERR_MNGR_HW_init(HW_status_t HW_init);
+uint8_t DS18B20_Init(void);
+uint8_t DS18B20_Get_Temp(void);
+DS18B20_t DS18B20_Get_Struct(void);
+
 
 #endif
