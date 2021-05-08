@@ -14,6 +14,7 @@
 #include "main.h"
 #include "i2c.h"
 #include "tim.h"
+#include "usart.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -28,6 +29,8 @@
 
 #include "ds18b20.h"
 #include "delay.h"
+
+#include "broadcast.h"
 
 /* USER CODE END Includes */
 
@@ -99,6 +102,7 @@ int main(void)
   MX_GPIO_Init();
   MX_I2C1_Init();
   MX_TIM3_Init();
+  MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
 
 	HW_status_t HW_init =
@@ -126,6 +130,12 @@ int main(void)
 
 	/* display a static message for */
 	HMI_OLED_display_running();
+
+	uint8_t pData[1];
+
+	HAL_UART_Receive_IT(&huart2, &pData, 1);
+
+	broadcast_uart_send(0xA1);
 
   /* USER CODE END 2 */
 
@@ -206,6 +216,17 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	if(GPIO_Pin == GPIO_PIN_3) HMI_OLED_IT_btn_middle();
 	if(GPIO_Pin == GPIO_PIN_4) HMI_OLED_IT_btn_bottom();
 }
+
+/** ************************************************************* *
+ * @brief       
+ * 
+ * @param       huart 
+ * ************************************************************* **/
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+    if(huart->Instance == USART2) broadcast_uart_receive();
+}
+
 
 /** ************************************************************* *
  * @brief       
