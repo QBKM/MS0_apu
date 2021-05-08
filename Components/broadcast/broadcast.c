@@ -18,6 +18,10 @@
 #include "stdio.h"
 #include "config_file.h"
 
+#include "msg_list.h"
+#include "msg_log.h"
+
+
 /* ------------------------------------------------------------- --
    defines
 -- ------------------------------------------------------------- */
@@ -31,8 +35,8 @@
 /* ------------------------------------------------------------- --
    variables
 -- ------------------------------------------------------------- */
-char OUT_MSG[1];
-char IN_MSG[1];
+char OUT_MSG[10];
+char IN_MSG[10];
 
 /* ------------------------------------------------------------- --
    Public functions
@@ -53,8 +57,9 @@ void broadcast_uart_send(const uint8_t message)
  * 
  * @param       message 
  * ************************************************************* **/
-uint8_t broadcast_uart_receive(void)
+void broadcast_uart_receive(void)
 {
-   HAL_UART_Receive_IT(&HUART, IN_MSG, sizeof(IN_MSG));
-   return (uint8_t)IN_MSG[0];
+   IN_MSG[0] = HUART.Instance->RDR;
+   MSG_LOG_push(IN_MSG[0]);
+   MSG_LOG_pop();
 }
