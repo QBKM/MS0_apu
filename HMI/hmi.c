@@ -20,6 +20,9 @@
 #include "bmp280.h"
 #include "mpu6050.h"
 
+#include "msg_log.h"
+#include "err_manager.h"
+
 /* ------------------------------------------------------------- --
    defines
 -- ------------------------------------------------------------- */
@@ -93,8 +96,10 @@ void HMI_OLED_display_menu(void)
 	SSD1306_GotoXY(14, HMI_OLED_LINE_2);
 	SSD1306_Puts("Display DATA",&Font_7x10, SSD1306_COLOR_WHITE);
 	SSD1306_GotoXY(14, HMI_OLED_LINE_3);
-	SSD1306_Puts("Quit menu",&Font_7x10, SSD1306_COLOR_WHITE);
+	SSD1306_Puts("Display STATUS",&Font_7x10, SSD1306_COLOR_WHITE);
 	SSD1306_GotoXY(14, HMI_OLED_LINE_4);
+	SSD1306_Puts("Quit menu",&Font_7x10, SSD1306_COLOR_WHITE);
+	SSD1306_GotoXY(14, HMI_OLED_LINE_5);
 	SSD1306_Puts("Restart",&Font_7x10, SSD1306_COLOR_WHITE);
 
 	SSD1306_UpdateScreen();
@@ -115,7 +120,7 @@ void HMI_OLED_display_menu_selector(void)
 	{
 		Menu.Button = NO_PUSH;
 		SSD1306_GotoXY(0, Menu.Line);
-		if(Menu.Line < HMI_OLED_LINE_4) Menu.Line += HMI_OLED_LINE_NEXT;
+		if(Menu.Line < HMI_OLED_LINE_5) Menu.Line += HMI_OLED_LINE_NEXT;
 		SSD1306_Puts(" ",&Font_7x10, SSD1306_COLOR_WHITE);
 		SSD1306_GotoXY(0, Menu.Line);
 		SSD1306_Puts(">",&Font_7x10, SSD1306_COLOR_WHITE);
@@ -144,15 +149,22 @@ void HMI_OLED_display_menu_selector(void)
 			Frame = DATA_LOG_FRAME;
 		}
 
-		/* select nunning frame */
+		/* select status frame */
 		else if(Menu.Line == HMI_OLED_LINE_3)
+		{
+			HMI_OLED_display_status();
+			Frame = STATUS_FRAME;
+		}
+
+		/* select nunning frame */
+		else if(Menu.Line == HMI_OLED_LINE_4)
 		{
 			HMI_OLED_display_running();
 			Frame = NO_FRAME;
 		}
 
 		/* select reset SW */
-		else if(Menu.Line == HMI_OLED_LINE_4)
+		else if(Menu.Line == HMI_OLED_LINE_5)
 		{
 			/* restart the software */
 			SCB->AIRCR = 0x05fa0004;
@@ -308,18 +320,19 @@ void HMI_OLED_display_init_log_angle(HW_status_t HW_init)
 uint8_t HMI_OLED_display_data_log(void)
 {
 	SSD1306_Clear();
-	SSD1306_GotoXY(0, 10);
+	SSD1306_GotoXY(0, HMI_OLED_LINE_1);
 	SSD1306_Puts("==== DATA LOG ====", &Font_7x10, SSD1306_COLOR_WHITE);
 
-	SSD1306_GotoXY(0, 20);
+	SSD1306_GotoXY(0, HMI_OLED_LINE_2);
 	SSD1306_Puts("time   : ", &Font_7x10, SSD1306_COLOR_WHITE);
 
-	SSD1306_GotoXY(0, 30);
+	SSD1306_GotoXY(0, HMI_OLED_LINE_3);
 	SSD1306_Puts("press  : ", &Font_7x10, SSD1306_COLOR_WHITE);
 
-	SSD1306_GotoXY(0, 40);
+	SSD1306_GotoXY(0, HMI_OLED_LINE_4);
   	SSD1306_Puts("angleX : ", &Font_7x10, SSD1306_COLOR_WHITE);
-	SSD1306_GotoXY(0, 50);
+
+	SSD1306_GotoXY(0, HMI_OLED_LINE_5);
   	SSD1306_Puts("angleY : ", &Font_7x10, SSD1306_COLOR_WHITE);
 
     /* update */
@@ -410,4 +423,74 @@ void HMI_OLED_display_save_screen(uint8_t* save)
 void HMI_OLED_display_restore_screen(uint8_t* save)
 {
 	memcpy(SSD1306_Buffer, save, sizeof(SSD1306_Buffer));
+}
+
+/** ************************************************************* *
+ * @brief       display the status menu
+ * 
+ * @return      uint8_t 
+ * ************************************************************* **/
+uint8_t HMI_OLED_display_status(void)
+{
+	SSD1306_Clear();
+	SSD1306_GotoXY(0, HMI_OLED_LINE_1);
+	SSD1306_Puts("===== STATUS =====", &Font_7x10, SSD1306_COLOR_WHITE);
+
+	SSD1306_GotoXY(0, HMI_OLED_LINE_2);
+	SSD1306_Puts("phase   : ", &Font_7x10, SSD1306_COLOR_WHITE);
+
+	SSD1306_GotoXY(0, HMI_OLED_LINE_3);
+	SSD1306_Puts("jack    : ", &Font_7x10, SSD1306_COLOR_WHITE);
+
+	SSD1306_GotoXY(0, HMI_OLED_LINE_5);
+	SSD1306_Puts("nb errs : ", &Font_7x10, SSD1306_COLOR_WHITE);
+
+	/* update */
+	if(SSD1306_UpdateScreen()) return HAL_ERROR;
+
+	return HAL_OK;
+}
+
+/** ************************************************************* *
+ * @brief       display the current phase
+ * 
+ * ************************************************************* **/
+void HMI_OLED_display_status_phase(uint8_t LINE)
+{
+	SSD1306_GotoXY(HMI_OLED_STATUS_COLUMN, LINE);
+	SSD1306_Puts("        ", &Font_7x10, SSD1306_COLOR_WHITE);
+
+	SSD1306_GotoXY(HMI_OLED_STATUS_COLUMN, LINE);
+	switch (phase)
+	{
+	case PHASE_WAIT: 	SSD1306_Puts("wait", &Font_7x10, SSD1306_COLOR_WHITE); 		break;
+	case PHASE_ASCEND: 	SSD1306_Puts("ascend", &Font_7x10, SSD1306_COLOR_WHITE);	break;
+	case PHASE_DEPLOY: 	SSD1306_Puts("apogee", &Font_7x10, SSD1306_COLOR_WHITE); 	break;
+	case PHASE_DESCEND: SSD1306_Puts("descend", &Font_7x10, SSD1306_COLOR_WHITE); 	break;
+	case PHASE_LANDED: 	SSD1306_Puts("landed", &Font_7x10, SSD1306_COLOR_WHITE); 	break;
+	default:																		break;
+	}
+}
+
+void HMI_OLED_display_status_jack(uint8_t LINE)
+{
+	SSD1306_GotoXY(HMI_OLED_STATUS_COLUMN, LINE);
+	SSD1306_Puts("          ", &Font_7x10, SSD1306_COLOR_WHITE);
+
+	SSD1306_GotoXY(HMI_OLED_STATUS_COLUMN, LINE);
+	switch (jack)
+	{
+	case PHASE_WAIT: 	SSD1306_Puts("plugged", &Font_7x10, SSD1306_COLOR_WHITE); 	break;
+	case PHASE_ASCEND: 	SSD1306_Puts("unplugged", &Font_7x10, SSD1306_COLOR_WHITE);	break;
+	default:																		break;
+	}
+}
+
+void HMI_OLED_display_status_errors_number(uint8_t LINE)
+{
+	SSD1306_GotoXY(HMI_OLED_STATUS_COLUMN, LINE);
+	SSD1306_Puts("        ", &Font_7x10, SSD1306_COLOR_WHITE);
+
+	SSD1306_GotoXY(HMI_OLED_STATUS_COLUMN, LINE);
+	SSD1306_Puts_Num16bits(err_counter, &Font_7x10, SSD1306_COLOR_WHITE);
 }

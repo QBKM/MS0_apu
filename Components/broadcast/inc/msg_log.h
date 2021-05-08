@@ -1,45 +1,63 @@
 /** ************************************************************* *
- * @file        err_manager.h
+ * @file        msg_log.h
  * @brief       
  * 
- * @date        2021-04-27
+ * @date        2021-05-08
  * @author      Quentin Bakrim (quentin.bakrim@hotmail.fr)
  * 
  * Mines Space
  * 
  * ************************************************************* **/
 
-#ifndef __ERR_MNGR__
-#define __ERR_MNGR__
+#ifndef __MSG_LOG__
+#define __MSG_LOG__
 
 /* ------------------------------------------------------------- --
-   includes
+   includeq
 -- ------------------------------------------------------------- */
-#include "stm32f3xx_hal.h"
+#include "stdint.h"
 
 
 /* ------------------------------------------------------------- --
    types
 -- ------------------------------------------------------------- */
-typedef struct HW_status_t
+typedef enum
 {
-	HAL_StatusTypeDef DS3231;
-	HAL_StatusTypeDef MPU6050;
-	HAL_StatusTypeDef BMP280;
-	HAL_StatusTypeDef SSD1306;
-	HAL_StatusTypeDef DS18B20;
-	HAL_StatusTypeDef TCA6408A;
-}HW_status_t;
+  PHASE_WAIT,
+  PHASE_ASCEND,
+  PHASE_DEPLOY,
+  PHASE_DESCEND,
+  PHASE_LANDED
+}phase_t;
 
+typedef enum
+{
+    JACK_PLUGGED,
+    JACK_UNPLUGGED
+}jack_t;
+
+typedef enum
+{
+    WINDOW_LOCK,
+    WINDOW_UNLOCK,
+    WINDOW_RELOCK
+}window_t;
 
 /* ------------------------------------------------------------- --
    variables
 -- ------------------------------------------------------------- */
-uint16_t err_counter;
+phase_t phase;
+jack_t jack;
+window_t window_IT;
+window_t window_POOL;
 
 /* ------------------------------------------------------------- --
    function prototypes
 -- ------------------------------------------------------------- */
-uint8_t ERR_MNGR_HW_init(HW_status_t HW_init);
+void MSG_LOG_init(void);
+void MSG_LOG_push(const uint8_t message);
+void MSG_LOG_pop(void);
+void MSG_LOG_dispatch(const uint8_t message);
+
 
 #endif
