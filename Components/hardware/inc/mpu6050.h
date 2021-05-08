@@ -27,7 +27,7 @@ typedef enum
 	MPU6050_AFS_2G 	= 0,
 	MPU6050_AFS_4G 	= 1,
 	MPU6050_AFS_8G 	= 2,
-	MPU6050_AFS_16G = 3
+	MPU6050_AFS_16G   = 3
 }MPU6050_AccelFullScale;
 
 /* gyro full scale range settings */
