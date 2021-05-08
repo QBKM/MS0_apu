@@ -64,6 +64,7 @@ void SystemClock_Config(void);
 void routine_no_frame(void);
 void routine_menu_frame(void);
 void routine_data_log_frame(void);
+void routine_status_frame(void);
 
 void routine_DS3231(void);
 void routine_BMP280(void);
@@ -121,6 +122,9 @@ int main(void)
 	/* delay_init */
 	delay_init();
 
+	/* init the msg_log */
+	MSG_LOG_init();
+
 	/* init the OLED */
 	HMI_OLED_init();
 	/* display MS0 logo a start */
@@ -133,9 +137,9 @@ int main(void)
 
 	uint8_t pData[1];
 
-	HAL_UART_Receive_IT(&huart2, &pData, 1);
+	HAL_UART_Receive_IT(&huart2, pData, 1);
 
-	broadcast_uart_send(0xA1);
+	//broadcast_uart_send(0xA2);
 
   /* USER CODE END 2 */
 
@@ -151,8 +155,16 @@ int main(void)
 	case NO_FRAME		: routine_no_frame(); 		break;
 	case MENU_FRAME		: routine_menu_frame(); 	break;
 	case DATA_LOG_FRAME	: routine_data_log_frame(); break;
+	case STATUS_FRAME	: routine_status_frame(); 	break;
 	default: break;
 	}
+
+	if(HAL_GetTick() >= 25000) broadcast_uart_send(MSG_ID_phase_landed);
+	else if(HAL_GetTick() >= 20500) broadcast_uart_send(MSG_ID_phase_descend);
+	else if(HAL_GetTick() >= 20000) broadcast_uart_send(MSG_ID_phase_deploy);
+	else if(HAL_GetTick() >= 15000) broadcast_uart_send(MSG_ID_phase_ascend);
+	else if(HAL_GetTick() >= 14000)	broadcast_uart_send(MSG_ID_HW_jack_unplugged);
+	else if(HAL_GetTick() > 10000) broadcast_uart_send(MSG_ID_HW_jack_plugged);
 
     /* USER CODE END WHILE */
 
@@ -295,6 +307,23 @@ void routine_data_log_frame(void)
 		HMI_OLED_display_data_log_failed(HMI_OLED_LINE_4);
 		HMI_OLED_display_data_log_failed(HMI_OLED_LINE_5);
 	}
+
+	SSD1306_UpdateScreen();
+}
+
+/** ************************************************************* *
+ * @brief       
+ * 
+ * ************************************************************* **/
+void routine_status_frame(void)
+{
+	routine_DS3231();
+	routine_BMP280();
+	routine_MPU6050();
+
+	HMI_OLED_display_status_phase(HMI_OLED_LINE_2);
+	HMI_OLED_display_status_jack(HMI_OLED_LINE_3);
+	HMI_OLED_display_status_errors_number(HMI_OLED_LINE_5);
 
 	SSD1306_UpdateScreen();
 }
