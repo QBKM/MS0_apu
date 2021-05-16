@@ -282,30 +282,30 @@ void routine_data_log_frame(void)
 
 	if(HW_status.DS3231 == HAL_OK)
 	{
-		HMI_OLED_display_data_log_time(TIME, HMI_OLED_LINE_2);
+		HMI_OLED_display_data_log_time(TIME);
 	}
 	else
 	{
-		HMI_OLED_display_data_log_failed(HMI_OLED_LINE_2);
+		HMI_OLED_display_data_log_failed(HMI_OLED_DATA_LINE_TIME);
 	}
 
 	if(HW_status.BMP280 == HAL_OK)
 	{
-		HMI_OLED_display_data_log_press(PRESS, HMI_OLED_LINE_3);
+		HMI_OLED_display_data_log_press(PRESS);
 	}
 	else
 	{
-		HMI_OLED_display_data_log_failed(HMI_OLED_LINE_3);
+		HMI_OLED_display_data_log_failed(HMI_OLED_DATA_LINE_PRESS);
 	}
 
 	if(HW_status.MPU6050 == HAL_OK)
 	{
-		HMI_OLED_display_data_log_angle(ANGLE, HMI_OLED_LINE_4, HMI_OLED_LINE_5);
+		HMI_OLED_display_data_log_angle(ANGLE);
 	}
 	else
 	{
-		HMI_OLED_display_data_log_failed(HMI_OLED_LINE_4);
-		HMI_OLED_display_data_log_failed(HMI_OLED_LINE_5);
+		HMI_OLED_display_data_log_failed(HMI_OLED_DATA_LINE_ANGLEX);
+		HMI_OLED_display_data_log_failed(HMI_OLED_DATA_LINE_ANGLEY);
 	}
 
 	SSD1306_UpdateScreen();
@@ -321,9 +321,9 @@ void routine_status_frame(void)
 	routine_BMP280();
 	routine_MPU6050();
 
-	HMI_OLED_display_status_phase(HMI_OLED_LINE_2);
-	HMI_OLED_display_status_jack(HMI_OLED_LINE_3);
-	HMI_OLED_display_status_errors_number(HMI_OLED_LINE_5);
+	HMI_OLED_display_status_phase();
+	HMI_OLED_display_status_jack();
+	HMI_OLED_display_status_errors_number();
 
 	SSD1306_UpdateScreen();
 }

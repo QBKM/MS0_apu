@@ -48,4 +48,54 @@
 #define TCA6408A_ADDR       (0x20 << 1)     /* TCA6408A address is 0x21 */
 
 
+/**************************************************************** *
+ * 	HMI
+ **************************************************************** */
+/* OLED lines position */
+#define HMI_OLED_LINE_NEXT			(uint8_t)10
+#define HMI_OLED_LINE_1				(uint8_t)10
+#define HMI_OLED_LINE_2				(uint8_t)20
+#define HMI_OLED_LINE_3				(uint8_t)30
+#define HMI_OLED_LINE_4				(uint8_t)40
+#define HMI_OLED_LINE_5				(uint8_t)50
+
+/* OLED columns position */
+#define HMI_OLED_INIT_LOG_COLUMN	(uint8_t)(12*7)
+#define HMI_OLED_DATA_LOG_COLUMN	(uint8_t)(7*8)
+#define HMI_OLED_STATUS_COLUMN		(uint8_t)(7*9)
+
+/* OLED columns for time display in data line */
+#define HMI_OLED_DATA_LOG_COLUMN_HOUR	(uint8_t)(7*8)
+#define HMI_OLED_DATA_LOG_COLUMN_DOT1	(uint8_t)(7*10)
+#define HMI_OLED_DATA_LOG_COLUMN_MIN	(uint8_t)(7*11)
+#define HMI_OLED_DATA_LOG_COLUMN_DOT2	(uint8_t)(7*13)
+#define HMI_OLED_DATA_LOG_COLUMN_SEC	(uint8_t)(7*14)
+
+/* OLED menu line */
+#define HMI_OLED_MENU_LINE_HEADER       HMI_OLED_LINE_1
+#define HMI_OLED_MENU_LINE_DATA         HMI_OLED_LINE_2
+#define HMI_OLED_MENU_LINE_STATUS       HMI_OLED_LINE_3
+#define HMI_OLED_MENU_LINE_QUIT         HMI_OLED_LINE_4
+#define HMI_OLED_MENU_LINE_RESTART      HMI_OLED_LINE_5
+
+/* OLED init line */
+#define HMI_OLED_INIT_LINE_DS3231       HMI_OLED_LINE_1
+#define HMI_OLED_INIT_LINE_BMP280       HMI_OLED_LINE_2
+#define HMI_OLED_INIT_LINE_MPU6050      HMI_OLED_LINE_3
+#define HMI_OLED_INIT_LINE_DS18B20      HMI_OLED_LINE_4
+
+/* OLED data line */
+#define HMI_OLED_DATA_LINE_HEADER       HMI_OLED_LINE_1
+#define HMI_OLED_DATA_LINE_TIME         HMI_OLED_LINE_2
+#define HMI_OLED_DATA_LINE_PRESS        HMI_OLED_LINE_3
+#define HMI_OLED_DATA_LINE_ANGLEX       HMI_OLED_LINE_4
+#define HMI_OLED_DATA_LINE_ANGLEY       HMI_OLED_LINE_5
+
+/* OLED status line */
+#define HMI_OLED_STATUS_LINE_HEADER     HMI_OLED_LINE_1
+#define HMI_OLED_STATUS_LINE_PHASE      HMI_OLED_LINE_2
+#define HMI_OLED_STATUS_LINE_JACK       HMI_OLED_LINE_3
+#define HMI_OLED_STATUS_LINE_ERRORS     HMI_OLED_LINE_5
+
+
 #endif
