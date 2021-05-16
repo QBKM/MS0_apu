@@ -132,6 +132,9 @@ static uint8_t DS18B20_Read(void)
  * ************************************************************* **/
 uint8_t DS18B20_Init(void)
 {
+	/* delay_init */
+	delay_init();
+
 	Set_Pin_Output();   // set the pin as output
 	HAL_GPIO_WritePin (DS18B20_PORT, GPIO_PIN_0, 0);  // pull the pin low
 	delay_us (480);   // delay according to datasheet
@@ -139,7 +142,7 @@ uint8_t DS18B20_Init(void)
 	Set_Pin_Input();    // set the pin as input
 	delay_us (80);    // delay according to datasheet
 
-	if(HAL_GPIO_ReadPin (DS18B20_PORT, DS18B20_PIN)) return HAL_ERROR;    // if the pin is low i.e the presence pulse is detected
+	if( ! HAL_GPIO_ReadPin (DS18B20_PORT, DS18B20_PIN)) return HAL_ERROR;    // if the pin is low i.e the presence pulse is detected
 
 	delay_us (400); // 480 us delay totally.
 

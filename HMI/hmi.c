@@ -233,6 +233,8 @@ uint8_t HMI_OLED_display_init_log(HW_status_t HW_init, uint32_t time, HMI_AfterD
 	SSD1306_Puts("BMP280....",&Font_7x10, SSD1306_COLOR_WHITE);
 	SSD1306_GotoXY(0, HMI_OLED_LINE_3);
 	SSD1306_Puts("MPU6050...",&Font_7x10, SSD1306_COLOR_WHITE);
+	SSD1306_GotoXY(0, HMI_OLED_LINE_4);
+	SSD1306_Puts("DS18B20...",&Font_7x10, SSD1306_COLOR_WHITE);
 
     /* DS3231 status */
 	HMI_OLED_display_init_log_time(HW_init);
@@ -242,6 +244,9 @@ uint8_t HMI_OLED_display_init_log(HW_status_t HW_init, uint32_t time, HMI_AfterD
 
     /* MPU6050 status */
 	HMI_OLED_display_init_log_angle(HW_init);
+
+    /* DS18B20 status */
+	HMI_OLED_display_init_log_temp(HW_init);
 
     /* update */
 	if(SSD1306_UpdateScreen()) return HAL_ERROR;
@@ -299,6 +304,25 @@ void HMI_OLED_display_init_log_angle(HW_status_t HW_init)
 {
 	SSD1306_GotoXY(HMI_OLED_INIT_LOG_COLUMN, HMI_OLED_LINE_3);
 	if(HW_init.MPU6050 == HAL_OK)
+	{
+		SSD1306_Puts("OK",&Font_7x10, SSD1306_COLOR_WHITE);
+	}
+	else
+	{
+		SSD1306_Puts("FAILED",&Font_7x10, SSD1306_COLOR_WHITE);
+	}
+
+}
+
+/** ************************************************************* *
+ * @brief       display the DS18B20 status
+ * 
+ * @param       HW_init 
+ * ************************************************************* **/
+void HMI_OLED_display_init_log_temp(HW_status_t HW_init)
+{
+	SSD1306_GotoXY(HMI_OLED_INIT_LOG_COLUMN, HMI_OLED_LINE_4);
+	if(HW_init.DS18B20 == HAL_OK)
 	{
 		SSD1306_Puts("OK",&Font_7x10, SSD1306_COLOR_WHITE);
 	}
