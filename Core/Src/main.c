@@ -104,6 +104,7 @@ int main(void)
   MX_I2C1_Init();
   MX_TIM3_Init();
   MX_USART2_UART_Init();
+  MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
 
 	HW_status_t HW_init =
@@ -112,15 +113,12 @@ int main(void)
 	.MPU6050 	= MPU6050_Init(),
 	.BMP280 	= BMP280_Init(),
 	.SSD1306 	= SSD1306_Init(),
-	/* .DS18B20	= DS18B20_Init()*/
+	.DS18B20	= DS18B20_Init(),
 	.TCA6408A	= TCA6408A_Init()
 	};
 
 	/* check the errors ... TO DO */
 	ERR_MNGR_HW_init(HW_init);
-
-	/* delay_init */
-	delay_init();
 
 	/* init the msg_log */
 	MSG_LOG_init();
@@ -207,7 +205,8 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_I2C1;
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART1|RCC_PERIPHCLK_I2C1;
+  PeriphClkInit.Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK1;
   PeriphClkInit.I2c1ClockSelection = RCC_I2C1CLKSOURCE_HSI;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
@@ -236,6 +235,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
  * ************************************************************* **/
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
+	if(huart->Instance == USART1) datalink_uart_receive();
     if(huart->Instance == USART2) broadcast_uart_receive();
 }
 
