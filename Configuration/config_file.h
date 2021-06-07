@@ -17,6 +17,13 @@
 /*	+-------------------+ */
 
 /**************************************************************** *
+ * 	SCHEDULER
+ **************************************************************** */
+/* Synchro */
+#define SYNC_DELAY  		100				/* [ms] time the scheduler wait to get synchronized */
+
+
+/**************************************************************** *
  * 	PERIPHERALS
  **************************************************************** */
 /* UART */
@@ -41,8 +48,6 @@
 
 /* SSD1306 */
 #define SSD1306_ADDR		0x78  			/* SSD1306 address is 0x78 */   
-#define SSD1306_INT16_SIZE	9				/* SSD1306 max numbers of charater to display for 16bits number */
-#define SSD1306_FLOAT_SIZE	9				/* SSD1306 max numbers of charater to display for float number */
 
 /* TCA6408A */
 #define TCA6408A_ADDR       (0x20 << 1)     /* TCA6408A address is 0x21 */
@@ -61,15 +66,15 @@
 
 /* OLED columns position */
 #define HMI_OLED_INIT_LOG_COLUMN	(uint8_t)(12*7)
-#define HMI_OLED_DATA_LOG_COLUMN	(uint8_t)(7*8)
+#define HMI_OLED_DATA_LOG_COLUMN	(uint8_t)(7*7)
 #define HMI_OLED_STATUS_COLUMN		(uint8_t)(7*9)
 
 /* OLED columns for time display in data line */
-#define HMI_OLED_DATA_LOG_COLUMN_HOUR	(uint8_t)(7*8)
-#define HMI_OLED_DATA_LOG_COLUMN_DOT1	(uint8_t)(7*10)
-#define HMI_OLED_DATA_LOG_COLUMN_MIN	(uint8_t)(7*11)
-#define HMI_OLED_DATA_LOG_COLUMN_DOT2	(uint8_t)(7*13)
-#define HMI_OLED_DATA_LOG_COLUMN_SEC	(uint8_t)(7*14)
+#define HMI_OLED_DATA_LOG_COLUMN_HOUR	(uint8_t)(7*7)
+#define HMI_OLED_DATA_LOG_COLUMN_DOT1	(uint8_t)(7*9)
+#define HMI_OLED_DATA_LOG_COLUMN_MIN	(uint8_t)(7*10)
+#define HMI_OLED_DATA_LOG_COLUMN_DOT2	(uint8_t)(7*12)
+#define HMI_OLED_DATA_LOG_COLUMN_SEC	(uint8_t)(7*13)
 
 /* OLED menu line */
 #define HMI_OLED_MENU_LINE_HEADER       HMI_OLED_LINE_1
