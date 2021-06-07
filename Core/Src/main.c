@@ -30,6 +30,8 @@
 #include "ds18b20.h"
 #include "delay.h"
 
+#include "synchro.h"
+
 #include "broadcast.h"
 
 /* USER CODE END Includes */
@@ -107,6 +109,8 @@ int main(void)
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
 
+	synchro_init();
+
 	HW_status_t HW_init =
 	{
 	.DS3231 	= DS3231_Init(),
@@ -145,6 +149,8 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {	 
+	synchro_update();
+
 	/* check if the user open the menu */
 	HMI_OLED_check_menu();
 
@@ -156,13 +162,12 @@ int main(void)
 	case STATUS_FRAME	: routine_status_frame(); 	break;
 	default: break;
 	}
+	
+	/* send data to LTS board */
+	datalink_uart_send();
 
-	if(HAL_GetTick() >= 25000) broadcast_uart_send(MSG_ID_phase_landed);
-	else if(HAL_GetTick() >= 20500) broadcast_uart_send(MSG_ID_phase_descend);
-	else if(HAL_GetTick() >= 20000) broadcast_uart_send(MSG_ID_phase_deploy);
-	else if(HAL_GetTick() >= 15000) broadcast_uart_send(MSG_ID_phase_ascend);
-	else if(HAL_GetTick() >= 14000)	broadcast_uart_send(MSG_ID_HW_jack_unplugged);
-	else if(HAL_GetTick() > 10000) broadcast_uart_send(MSG_ID_HW_jack_plugged);
+	/* wait for synchro */
+	synchro_wait();
 
     /* USER CODE END WHILE */
 
@@ -235,7 +240,6 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
  * ************************************************************* **/
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-	if(huart->Instance == USART1) datalink_uart_receive();
     if(huart->Instance == USART2) broadcast_uart_receive();
 }
 
@@ -249,7 +253,7 @@ void routine_no_frame(void)
 	routine_DS3231();
 	routine_BMP280();
 	routine_MPU6050();
-	//routine_DS18B20();
+	routine_DS18B20();
 }
 
 
@@ -262,7 +266,7 @@ void routine_menu_frame(void)
 	routine_DS3231();
 	routine_BMP280();
 	routine_MPU6050();
-	//routine_DS18B20();
+	routine_DS18B20();
 
 	HMI_OLED_display_menu_selector();
 	SSD1306_UpdateScreen();
@@ -278,7 +282,7 @@ void routine_data_log_frame(void)
 	routine_DS3231();
 	routine_BMP280();
 	routine_MPU6050();
-	//routine_DS18B20();
+	routine_DS18B20();
 
 	if(HW_status.DS3231 == HAL_OK)
 	{
@@ -305,7 +309,15 @@ void routine_data_log_frame(void)
 	else
 	{
 		HMI_OLED_display_data_log_failed(HMI_OLED_DATA_LINE_ANGLEX);
-		HMI_OLED_display_data_log_failed(HMI_OLED_DATA_LINE_ANGLEY);
+	}
+
+	if(HW_status.DS18B20 == HAL_OK)
+	{
+		HMI_OLED_display_data_log_temp(TEMP);
+	}
+	else
+	{
+		HMI_OLED_display_data_log_failed(HMI_OLED_LINE_5);
 	}
 
 	SSD1306_UpdateScreen();
@@ -320,6 +332,7 @@ void routine_status_frame(void)
 	routine_DS3231();
 	routine_BMP280();
 	routine_MPU6050();
+	routine_DS18B20();
 
 	HMI_OLED_display_status_phase();
 	HMI_OLED_display_status_jack();
