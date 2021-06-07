@@ -22,7 +22,7 @@
 -- ------------------------------------------------------------- */
 typedef struct DS18B20_t{
 	uint8_t LSB;
-    uint8_t MSB;
+   uint8_t MSB;
 	float temperature;
 }DS18B20_t;
 
