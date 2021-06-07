@@ -68,6 +68,7 @@ uint8_t ERR_MNGR_HW_init(HW_status_t HW_init)
     if(HW_init.DS3231)  ERR_MNGR_push_log("DS3231 init");
     if(HW_init.MPU6050) ERR_MNGR_push_log("MPU6050 init");
     if(HW_init.SSD1306) ERR_MNGR_push_log("SSD1306 init");
+    if(HW_init.DS18B20) ERR_MNGR_push_log("DS18B20 init");
 
     return (err_counter - init_error);
 }

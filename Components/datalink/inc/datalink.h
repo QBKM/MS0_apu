@@ -1,37 +1,30 @@
 /** ************************************************************* *
- * @file        ds18b20.h
+ * @file        datalink.h
  * @brief       
  * 
- * @date        2021-04-30
+ * @date        2021-05-16
  * @author      Quentin Bakrim (quentin.bakrim@hotmail.fr)
  * 
  * Mines Space
  * 
  * ************************************************************* **/
 
-#ifndef __DS18B29__
-#define __DS18B29__
+#ifndef __DATALINK_H__
+#define __DATALINK_H__
 
 /* ------------------------------------------------------------- --
    includes
 -- ------------------------------------------------------------- */
-#include "delay.h"
+#include "stdint.h"
+
 
 /* ------------------------------------------------------------- --
-   types
+   Public protoypes
 -- ------------------------------------------------------------- */
-typedef struct DS18B20_t{
-	uint8_t LSB;
-   uint8_t MSB;
-	float temperature;
-}DS18B20_t;
+void datalink_uart_send(void);
 
+
+#endif /* __DATALINK_H__ */
 /* ------------------------------------------------------------- --
-   function prototypes
+   end of file
 -- ------------------------------------------------------------- */
-uint8_t DS18B20_Init(void);
-uint8_t DS18B20_Get_Temp(void);
-DS18B20_t DS18B20_Get_Struct(void);
-
-
-#endif

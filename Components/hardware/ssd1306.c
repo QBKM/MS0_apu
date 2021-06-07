@@ -342,17 +342,17 @@ uint8_t SSD1306_Puts(char* str, FontDef_t* Font, SSD1306_COLOR_t color) {
  * @param       color 
  * @return      uint8_t 
  * ************************************************************* **/
-uint8_t SSD1306_Puts_Num16bits(int16_t number, FontDef_t* Font, SSD1306_COLOR_t color)
+uint8_t SSD1306_Puts_Num16bits(int16_t number, uint8_t printsize, FontDef_t* Font, SSD1306_COLOR_t color)
 {
 	char buffer[10];
 
 	if(number < 10)
 	{
-		snprintf(buffer, SSD1306_INT16_SIZE, "0%d", number);	
+		snprintf(buffer, printsize, "0%d", number);	
 	}
 	else
 	{
-		snprintf(buffer, SSD1306_INT16_SIZE, "%d", number);
+		snprintf(buffer, printsize, "%d", number);
 	}
 	
 	SSD1306_Puts(buffer, Font, color);
@@ -368,11 +368,11 @@ uint8_t SSD1306_Puts_Num16bits(int16_t number, FontDef_t* Font, SSD1306_COLOR_t 
  * @param       color 
  * @return      uint8_t 
  * ************************************************************* **/
-uint8_t SSD1306_Puts_float(float number, FontDef_t* Font, SSD1306_COLOR_t color)
+uint8_t SSD1306_Puts_float(float number, uint8_t printsize, FontDef_t* Font, SSD1306_COLOR_t color)
 {
 	char buffer[10];
 
-	snprintf(buffer, SSD1306_FLOAT_SIZE, "%f", number);
+	snprintf(buffer, printsize, "%f", number);
 	SSD1306_Puts(buffer, Font, color);
 
 	return *buffer;

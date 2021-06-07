@@ -1,37 +1,41 @@
 /** ************************************************************* *
- * @file        ds18b20.h
- * @brief       
+ * @file       synchro.h
+ * @brief      
  * 
- * @date        2021-04-30
- * @author      Quentin Bakrim (quentin.bakrim@hotmail.fr)
+ * @date       2021-04-23
+ * @author     Quentin Bakrim (quentin.bakrim@hotmail.fr)
  * 
  * Mines Space
  * 
  * ************************************************************* **/
 
-#ifndef __DS18B29__
-#define __DS18B29__
+#ifndef SCHEDULER_INC_SYNCHRO_H_
+#define SCHEDULER_INC_SYNCHRO_H_
 
 /* ------------------------------------------------------------- --
    includes
 -- ------------------------------------------------------------- */
-#include "delay.h"
+#include "stdint.h"
 
 /* ------------------------------------------------------------- --
    types
 -- ------------------------------------------------------------- */
-typedef struct DS18B20_t{
-	uint8_t LSB;
-   uint8_t MSB;
-	float temperature;
-}DS18B20_t;
+typedef struct synchro_t
+{
+    uint32_t time_ref;
+    uint32_t time_sync;
+}synchro_t;
 
 /* ------------------------------------------------------------- --
    function prototypes
 -- ------------------------------------------------------------- */
-uint8_t DS18B20_Init(void);
-uint8_t DS18B20_Get_Temp(void);
-DS18B20_t DS18B20_Get_Struct(void);
+void synchro_init(void);
+void synchro_update(void);
+void synchro_wait(void);
 
 
-#endif
+
+#endif /* SCHEDULER_INC_SYNCHRO_H_ */
+/* ------------------------------------------------------------- --
+   end of file
+-- ------------------------------------------------------------- */
