@@ -21,8 +21,7 @@
 /* ------------------------------------------------------------- --
    Public protoypes
 -- ------------------------------------------------------------- */
-void    datalink_uart_send(const uint8_t message);
-void    datalink_uart_receive(void);
+void datalink_uart_send(void);
 
 
 #endif /* __DATALINK_H__ */

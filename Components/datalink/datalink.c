@@ -18,6 +18,8 @@
 #include "stdio.h"
 #include "config_file.h"
 
+#include "database.h"
+
 
 /* ------------------------------------------------------------- --
    defines
@@ -30,12 +32,6 @@
 #define HUART  huart1
 
 /* ------------------------------------------------------------- --
-   variables
--- ------------------------------------------------------------- */
-char OUT_MSG[64];
-char IN_MSG[64];
-
-/* ------------------------------------------------------------- --
    Public functions
 -- ------------------------------------------------------------- */
 /** ************************************************************* *
@@ -43,20 +39,20 @@ char IN_MSG[64];
  * 
  * @param      message 
  * ************************************************************* **/
-void datalink_uart_send(const uint8_t message)
+void datalink_uart_send(void)
 {
-    sprintf(OUT_MSG, "%c", message);
-    HAL_UART_Transmit(&HUART, (uint8_t*)OUT_MSG, strlen(OUT_MSG), TIMEOUT_UART);
-}
+	DATABASE_t database = 
+	{
+		.BMP280 	= BMP280_Get_Struct(),
+		.DS18B20 	= DS18B20_Get_Struct(),
+		.DS3231 	= DS3231_Get_Struct(),
+		.MPU6050 	= MPU6050_Get_Struct()
+	};
 
-/** ************************************************************* *
- * @brief       receive on uart a short ID from other boards
- * 
- * @param       message 
- * ************************************************************* **/
-void datalink_uart_receive(void)
-{
-    IN_MSG[0] = HUART.Instance->RDR;
-    //MSG_LOG_push(IN_MSG[0]);
-    //MSG_LOG_pop();
+	char buffer[sizeof(database)];
+	memcpy(buffer, &database, sizeof(database));
+
+	HAL_UART_Transmit(&HUART, (uint8_t*)"[", sizeof("["), TIMEOUT_UART);			
+	HAL_UART_Transmit(&HUART, (uint8_t *)buffer, sizeof(buffer), TIMEOUT_UART);
+	HAL_UART_Transmit(&HUART, (uint8_t*)"]", sizeof("]"), TIMEOUT_UART);
 }
