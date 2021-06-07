@@ -349,16 +349,19 @@ uint8_t HMI_OLED_display_data_log(void)
 	SSD1306_Puts("==== DATA LOG ====", &Font_7x10, SSD1306_COLOR_WHITE);
 
 	SSD1306_GotoXY(0, HMI_OLED_DATA_LINE_TIME);
-	SSD1306_Puts("time   : ", &Font_7x10, SSD1306_COLOR_WHITE);
+	SSD1306_Puts("time  : ", &Font_7x10, SSD1306_COLOR_WHITE);
 
 	SSD1306_GotoXY(0, HMI_OLED_DATA_LINE_PRESS);
-	SSD1306_Puts("press  : ", &Font_7x10, SSD1306_COLOR_WHITE);
+	SSD1306_Puts("press : ", &Font_7x10, SSD1306_COLOR_WHITE);
 
 	SSD1306_GotoXY(0, HMI_OLED_DATA_LINE_ANGLEX);
-  	SSD1306_Puts("angleX : ", &Font_7x10, SSD1306_COLOR_WHITE);
+  	SSD1306_Puts("angXY : ", &Font_7x10, SSD1306_COLOR_WHITE);
 
-	SSD1306_GotoXY(0, HMI_OLED_DATA_LINE_ANGLEY);
-  	SSD1306_Puts("angleY : ", &Font_7x10, SSD1306_COLOR_WHITE);
+	SSD1306_GotoXY(0, HMI_OLED_LINE_5);
+  	SSD1306_Puts("temp  : ", &Font_7x10, SSD1306_COLOR_WHITE);
+
+	//SSD1306_GotoXY(0, HMI_OLED_DATA_LINE_ANGLEY);
+  	//SSD1306_Puts("angleY : ", &Font_7x10, SSD1306_COLOR_WHITE);
 
     /* update */
 	if(SSD1306_UpdateScreen()) return HAL_ERROR;
@@ -391,13 +394,13 @@ void HMI_OLED_display_data_log_time(DS3231_t TIME)
 
 
    	SSD1306_GotoXY(HMI_OLED_DATA_LOG_COLUMN_HOUR, HMI_OLED_DATA_LINE_TIME);
-   	SSD1306_Puts_Num16bits(TIME.Hour, &Font_7x10, SSD1306_COLOR_WHITE);
+   	SSD1306_Puts_Num16bits(TIME.Hour, 3, &Font_7x10, SSD1306_COLOR_WHITE);
 
    	SSD1306_GotoXY(HMI_OLED_DATA_LOG_COLUMN_MIN, HMI_OLED_DATA_LINE_TIME);
-   	SSD1306_Puts_Num16bits(TIME.Min, &Font_7x10, SSD1306_COLOR_WHITE);
+   	SSD1306_Puts_Num16bits(TIME.Min, 3, &Font_7x10, SSD1306_COLOR_WHITE);
 
    	SSD1306_GotoXY(HMI_OLED_DATA_LOG_COLUMN_SEC, HMI_OLED_DATA_LINE_TIME);
-   	SSD1306_Puts_Num16bits(TIME.Sec, &Font_7x10, SSD1306_COLOR_WHITE);
+   	SSD1306_Puts_Num16bits(TIME.Sec, 3, &Font_7x10, SSD1306_COLOR_WHITE);
 }
 
 
@@ -411,7 +414,7 @@ void HMI_OLED_display_data_log_press(BMP280_t PRESS)
 	SSD1306_Puts("        ", &Font_7x10, SSD1306_COLOR_WHITE);
 
 	SSD1306_GotoXY(HMI_OLED_DATA_LOG_COLUMN, HMI_OLED_DATA_LINE_PRESS);
-	SSD1306_Puts_float((PRESS.pressure/100), &Font_7x10, SSD1306_COLOR_WHITE);
+	SSD1306_Puts_float((PRESS.pressure/100), 9, &Font_7x10, SSD1306_COLOR_WHITE);
 }
 
 
@@ -425,14 +428,31 @@ void HMI_OLED_display_data_log_angle(MPU6050_t ANGLE)
 	SSD1306_Puts("        ", &Font_7x10, SSD1306_COLOR_WHITE);
 
 	SSD1306_GotoXY(HMI_OLED_DATA_LOG_COLUMN, HMI_OLED_DATA_LINE_ANGLEX);
-	SSD1306_Puts_float(ANGLE.KalmanAngleX, &Font_7x10, SSD1306_COLOR_WHITE);
+	SSD1306_Puts_float(ANGLE.KalmanAngleX, 6, &Font_7x10, SSD1306_COLOR_WHITE);
+
+	SSD1306_GotoXY(13*7, HMI_OLED_DATA_LINE_ANGLEX);
+	SSD1306_Puts_float(ANGLE.KalmanAngleY, 6, &Font_7x10, SSD1306_COLOR_WHITE);
 
 
-	SSD1306_GotoXY(HMI_OLED_DATA_LOG_COLUMN, HMI_OLED_DATA_LINE_ANGLEY);
+	//SSD1306_GotoXY(HMI_OLED_DATA_LOG_COLUMN, HMI_OLED_DATA_LINE_ANGLEY);
+	//SSD1306_Puts("        ", &Font_7x10, SSD1306_COLOR_WHITE);
+
+	//SSD1306_GotoXY(HMI_OLED_DATA_LOG_COLUMN, HMI_OLED_DATA_LINE_ANGLEY);
+	//SSD1306_Puts_float(ANGLE.KalmanAngleY, 4, &Font_7x10, SSD1306_COLOR_WHITE);
+}
+
+/** ************************************************************* *
+ * @brief       
+ * 
+ * @param       TEMP 
+ * ************************************************************* **/
+void HMI_OLED_display_data_log_temp(DS18B20_t TEMP)
+{
+	SSD1306_GotoXY(HMI_OLED_DATA_LOG_COLUMN, HMI_OLED_LINE_5);
 	SSD1306_Puts("        ", &Font_7x10, SSD1306_COLOR_WHITE);
 
-	SSD1306_GotoXY(HMI_OLED_DATA_LOG_COLUMN, HMI_OLED_DATA_LINE_ANGLEY);
-	SSD1306_Puts_float(ANGLE.KalmanAngleY, &Font_7x10, SSD1306_COLOR_WHITE);
+	SSD1306_GotoXY(HMI_OLED_DATA_LOG_COLUMN, HMI_OLED_LINE_5);
+	SSD1306_Puts_float(TEMP.temperature, 6, &Font_7x10, SSD1306_COLOR_WHITE);
 }
 
 /** ************************************************************* *
@@ -517,5 +537,5 @@ void HMI_OLED_display_status_errors_number(void)
 	SSD1306_Puts("        ", &Font_7x10, SSD1306_COLOR_WHITE);
 
 	SSD1306_GotoXY(HMI_OLED_STATUS_COLUMN, HMI_OLED_STATUS_LINE_ERRORS);
-	SSD1306_Puts_Num16bits(err_counter, &Font_7x10, SSD1306_COLOR_WHITE);
+	SSD1306_Puts_Num16bits(err_counter, 9, &Font_7x10, SSD1306_COLOR_WHITE);
 }

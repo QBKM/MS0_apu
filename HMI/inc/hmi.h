@@ -20,6 +20,7 @@
 #include "ds3231.h"
 #include "bmp280.h"
 #include "mpu6050.h"
+#include "ds18b20.h"
 
 #include "config_file.h"
 
@@ -98,6 +99,7 @@ void        HMI_OLED_display_data_log_failed(uint8_t LINE);
 void        HMI_OLED_display_data_log_time(DS3231_t TIME);
 void        HMI_OLED_display_data_log_press(BMP280_t PRESS);
 void        HMI_OLED_display_data_log_angle(MPU6050_t ANGLE);
+void        HMI_OLED_display_data_log_temp(DS18B20_t TEMP);
 
 /* display status screen */
 uint8_t		HMI_OLED_display_status(void);
