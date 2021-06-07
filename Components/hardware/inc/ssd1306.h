@@ -64,8 +64,8 @@ void 	SSD1306_DrawBitmap(int16_t x, int16_t y, const unsigned char* bitmap, int1
 /* print characters */
 uint8_t SSD1306_Putc(char ch, FontDef_t* Font, SSD1306_COLOR_t color);
 uint8_t SSD1306_Puts(char* str, FontDef_t* Font, SSD1306_COLOR_t color);
-uint8_t SSD1306_Puts_Num16bits(int16_t number, FontDef_t* Font, SSD1306_COLOR_t color);
-uint8_t SSD1306_Puts_float(float number, FontDef_t* Font, SSD1306_COLOR_t color);
+uint8_t SSD1306_Puts_Num16bits(int16_t number, uint8_t printsize, FontDef_t* Font, SSD1306_COLOR_t color);
+uint8_t SSD1306_Puts_float(float number, uint8_t printsize, FontDef_t* Font, SSD1306_COLOR_t color);
 
 /* scroll */
 uint8_t SSD1306_ScrollRight(uint8_t start_row, uint8_t end_row);
