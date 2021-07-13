@@ -93,6 +93,8 @@ static uint8_t DS18B20_Write(uint8_t data)
     			Set_Pin_Input();
     		}
     	}
+
+    return HAL_OK;
 }
 
 /** ************************************************************* *
