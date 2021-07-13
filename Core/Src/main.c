@@ -33,6 +33,7 @@
 #include "synchro.h"
 
 #include "broadcast.h"
+#include "datalink.h"
 
 /* USER CODE END Includes */
 
@@ -76,6 +77,11 @@ void routine_DS18B20(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+///////////////////////////////////////////////////////////////
+	uint8_t pData[10];
+	//uint8_t trig = 0;
+	/////////////////////////////////////////////////////////
 /* USER CODE END 0 */
 
 /**
@@ -109,6 +115,24 @@ int main(void)
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
 
+
+
+
+////////////////////////// temp
+	
+//	while(1)
+//	{
+	HAL_UART_Receive_IT(&huart2, pData, 1);
+
+//		while(trig == 0);
+//	}
+
+
+
+////////////////////////////
+
+  
+
 	synchro_init();
 
 	HW_status_t HW_init =
@@ -117,7 +141,7 @@ int main(void)
 	.MPU6050 	= MPU6050_Init(),
 	.BMP280 	= BMP280_Init(),
 	.SSD1306 	= SSD1306_Init(),
-	.DS18B20	= DS18B20_Init(),
+	//.DS18B20	= DS18B20_Init(),
 	.TCA6408A	= TCA6408A_Init()
 	};
 
@@ -136,10 +160,6 @@ int main(void)
 
 	/* display a static message for */
 	HMI_OLED_display_running();
-
-	uint8_t pData[1];
-
-	HAL_UART_Receive_IT(&huart2, pData, 1);
 
 	//broadcast_uart_send(0xA2);
 
@@ -240,7 +260,30 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
  * ************************************************************* **/
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-    if(huart->Instance == USART2) broadcast_uart_receive();
+  //  if(huart->Instance == USART2) trig = 1;//broadcast_uart_receive();HAL_UART_Receive_IT(&huart2, pData, 1);
+	if(huart->Instance == USART2)
+	{
+		msg_id = *pData;
+
+		switch (*pData)
+		{
+		case 0xA1 : phase = PHASE_WAIT; break;
+		case 0xA2 : phase = PHASE_ASCEND; break;
+		case 0xA3 : phase = PHASE_DEPLOY; break;
+		case 0xA4 : phase = PHASE_DESCEND; break;
+		case 0xA5 : phase = PHASE_LANDED; break;
+
+		case 0xB1 : jack = JACK_PLUGGED; break;
+		case 0xB2 : jack = JACK_UNPLUGGED; break;
+
+		
+		default:
+			break;
+		}
+		
+		HAL_UART_Receive_IT(&huart2, pData, 1);
+	} 
+
 }
 
 
@@ -253,7 +296,7 @@ void routine_no_frame(void)
 	routine_DS3231();
 	routine_BMP280();
 	routine_MPU6050();
-	routine_DS18B20();
+	//routine_DS18B20();
 }
 
 
@@ -266,7 +309,7 @@ void routine_menu_frame(void)
 	routine_DS3231();
 	routine_BMP280();
 	routine_MPU6050();
-	routine_DS18B20();
+	//routine_DS18B20();
 
 	HMI_OLED_display_menu_selector();
 	SSD1306_UpdateScreen();
@@ -282,7 +325,7 @@ void routine_data_log_frame(void)
 	routine_DS3231();
 	routine_BMP280();
 	routine_MPU6050();
-	routine_DS18B20();
+	//routine_DS18B20();
 
 	if(HW_status.DS3231 == HAL_OK)
 	{
@@ -332,10 +375,11 @@ void routine_status_frame(void)
 	routine_DS3231();
 	routine_BMP280();
 	routine_MPU6050();
-	routine_DS18B20();
+	//routine_DS18B20();
 
 	HMI_OLED_display_status_phase();
 	HMI_OLED_display_status_jack();
+	HMI_OLED_display_status_msg_id();
 	HMI_OLED_display_status_errors_number();
 
 	SSD1306_UpdateScreen();

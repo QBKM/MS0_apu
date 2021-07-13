@@ -126,6 +126,7 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
     HAL_NVIC_EnableIRQ(USART2_IRQn);
   /* USER CODE BEGIN USART2_MspInit 1 */
 
+    __HAL_UART_ENABLE_IT(uartHandle, UART_IT_RXNE);
   /* USER CODE END USART2_MspInit 1 */
   }
 }

@@ -105,6 +105,7 @@ void        HMI_OLED_display_data_log_temp(DS18B20_t TEMP);
 uint8_t		HMI_OLED_display_status(void);
 void		   HMI_OLED_display_status_phase(void);
 void		   HMI_OLED_display_status_jack(void);
+void        HMI_OLED_display_status_msg_id(void);
 void		   HMI_OLED_display_status_errors_number(void);
 
 /* display errors list */

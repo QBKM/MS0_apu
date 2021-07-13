@@ -60,7 +60,7 @@ void MSG_LOG_dispatch(const uint8_t message)
 void MSG_LOG_init(void)
 {
     phase       = PHASE_WAIT;
-    jack        = JACK_UNPLUGGED;
+    jack        = JACK_PLUGGED;
     window_IT   = WINDOW_LOCK;
     window_POOL = WINDOW_LOCK;
 
@@ -88,5 +88,19 @@ void MSG_LOG_pop(void)
     {
         MSG_LOG_dispatch(MSG_LOG[0]);
         buff_index -=1;
+    }
+}
+
+/** ************************************************************* *
+ * @brief       
+ * 
+ * ************************************************************* **/
+void MSG_LOG_flush(void)
+{
+    uint8_t i = 0;
+
+    for(i = 0; i < BUFF_SIZE; i++)
+    {
+        MSG_LOG[i] = 0;
     }
 }

@@ -23,6 +23,7 @@
 #include "msg_log.h"
 #include "err_manager.h"
 
+#include "broadcast.h"
 
 /* ------------------------------------------------------------- --
    defines
@@ -487,6 +488,9 @@ uint8_t HMI_OLED_display_status(void)
 	SSD1306_GotoXY(0, HMI_OLED_STATUS_LINE_JACK);
 	SSD1306_Puts("jack    : ", &Font_7x10, SSD1306_COLOR_WHITE);
 
+	SSD1306_GotoXY(0, HMI_OLED_STATUS_LINE_MSG_ID);
+	SSD1306_Puts("msg ID  : ", &Font_7x10, SSD1306_COLOR_WHITE);
+
 	SSD1306_GotoXY(0, HMI_OLED_STATUS_LINE_ERRORS);
 	SSD1306_Puts("nb errs : ", &Font_7x10, SSD1306_COLOR_WHITE);
 
@@ -525,10 +529,20 @@ void HMI_OLED_display_status_jack(void)
 	SSD1306_GotoXY(HMI_OLED_STATUS_COLUMN, HMI_OLED_STATUS_LINE_JACK);
 	switch (jack)
 	{
-	case PHASE_WAIT: 	SSD1306_Puts("plugged", &Font_7x10, SSD1306_COLOR_WHITE); 	break;
-	case PHASE_ASCEND: 	SSD1306_Puts("unplugged", &Font_7x10, SSD1306_COLOR_WHITE);	break;
-	default:																		break;
+	case JACK_PLUGGED:		SSD1306_Puts("plugged", &Font_7x10, SSD1306_COLOR_WHITE); 	break;
+	case JACK_UNPLUGGED: 	SSD1306_Puts("unplugged", &Font_7x10, SSD1306_COLOR_WHITE);	break;
+	default:																			break;
 	}
+}
+
+void HMI_OLED_display_status_msg_id(void)
+{
+	SSD1306_GotoXY(HMI_OLED_STATUS_COLUMN, HMI_OLED_STATUS_LINE_MSG_ID);
+	SSD1306_Puts("          ", &Font_7x10, SSD1306_COLOR_WHITE);
+
+	SSD1306_GotoXY(HMI_OLED_STATUS_COLUMN, HMI_OLED_STATUS_LINE_MSG_ID);
+	SSD1306_Puts(msg_id, &Font_7x10, SSD1306_COLOR_WHITE);
+
 }
 
 void HMI_OLED_display_status_errors_number(void)

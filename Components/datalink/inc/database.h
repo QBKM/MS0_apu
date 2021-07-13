@@ -23,6 +23,7 @@ typedef struct
     DS18B20_t   DS18B20;
     DS3231_t    DS3231;
     MPU6050_t   MPU6050;
+    uint8_t     MSG_ID[10];
 }DATABASE_t;
 
 void DATABASE_fill_struct(DATABASE_t);
