@@ -14,16 +14,8 @@
 /* ------------------------------------------------------------- --
    includes
 -- ------------------------------------------------------------- */
-#include "stdint.h"
 #include "msg_log.h"
 #include "msg_list.h"
-
-
-/* ------------------------------------------------------------- --
-   Public protoypes
--- ------------------------------------------------------------- */
-void     broadcast_uart_send(const uint8_t message);
-void     broadcast_uart_receive(void);
 
 
 #endif /* BROADCAST_INC_BROADCAST_H_ */

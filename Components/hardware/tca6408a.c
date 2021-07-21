@@ -66,7 +66,7 @@ uint8_t TCA6408A_Init(void)
 
     TCA6408A_t temp = 
     {
-        .PIN_state  = 0x00,     /* All pin to low */
+        .PIN_state  = 0xFF,     /* All pin to high */
         .MODE_state = 0x00      /* All mode to output */
     };
     TCA6408A = temp;

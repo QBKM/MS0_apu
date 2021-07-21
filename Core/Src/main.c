@@ -12,7 +12,9 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "fatfs.h"
 #include "i2c.h"
+#include "spi.h"
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
@@ -24,7 +26,7 @@
 #include "bmp280.h"
 #include "ssd1306.h"
 #include "tca6408a.h"
-#include "bitmap.h"
+
 #include "hmi.h"
 
 #include "ds18b20.h"
@@ -33,8 +35,10 @@
 #include "synchro.h"
 
 #include "broadcast.h"
-#include "datalink.h"
 
+#include "fatfs_sd.h"
+
+#include "stdio.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -59,6 +63,12 @@ BMP280_t PRESS;
 MPU6050_t ANGLE;
 DS18B20_t TEMP;
 
+FATFS FatFs; 	    //Fatfs handle
+FIL fil; 		    //File handle
+FRESULT fres;       //Result after operations
+
+uint8_t msg_seq = 0;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -73,6 +83,8 @@ void routine_DS3231(void);
 void routine_BMP280(void);
 void routine_MPU6050(void);
 void routine_DS18B20(void);
+
+uint8_t SDCARD_Init(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -113,25 +125,9 @@ int main(void)
   MX_TIM3_Init();
   MX_USART2_UART_Init();
   MX_USART1_UART_Init();
+  MX_FATFS_Init();
+  MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
-
-
-
-
-////////////////////////// temp
-	
-//	while(1)
-//	{
-	HAL_UART_Receive_IT(&huart2, pData, 1);
-
-//		while(trig == 0);
-//	}
-
-
-
-////////////////////////////
-
-  
 
 	synchro_init();
 
@@ -141,12 +137,13 @@ int main(void)
 	.MPU6050 	= MPU6050_Init(),
 	.BMP280 	= BMP280_Init(),
 	.SSD1306 	= SSD1306_Init(),
-	//.DS18B20	= DS18B20_Init(),
-	.TCA6408A	= TCA6408A_Init()
+	.DS18B20	= DS18B20_Init(),
+	.TCA6408A	= TCA6408A_Init(),
+    .SDCARD     = SDCARD_Init()
 	};
 
-	/* check the errors ... TO DO */
-	ERR_MNGR_HW_init(HW_init);
+    /* restart the software if IMU is KO */
+    if(HW_init.MPU6050 == HAL_ERROR) SCB->AIRCR = 0x05fa0004;
 
 	/* init the msg_log */
 	MSG_LOG_init();
@@ -154,14 +151,15 @@ int main(void)
 	/* init the OLED */
 	HMI_OLED_init();
 	/* display MS0 logo a start */
-	HMI_OLED_display_bitmap(logo_ms0, 1000, ClearAfter);
+
 	/* display the HW init log */
 	HMI_OLED_display_init_log(HW_init, 2000, ClearAfter);
 
 	/* display a static message for */
 	HMI_OLED_display_running();
 
-	//broadcast_uart_send(0xA2);
+    /* load the IT on uart */
+	HAL_UART_Receive_IT(&huart2, pData, 1);
 
   /* USER CODE END 2 */
 
@@ -183,10 +181,118 @@ int main(void)
 	default: break;
 	}
 	
-	/* send data to LTS board */
-	datalink_uart_send();
 
-	/* wait for synchro */
+	/* write data on sdcard */
+	if(HW_status.SDCARD == HAL_OK)
+	{
+		f_printf(&fil, "%d;%d;%d;", TIME.Hour, TIME.Min, TIME.Sec);
+		char buffer[10];
+		snprintf(buffer, 10, "%f", PRESS.temperature);
+		f_printf(&fil, "%s;", buffer);
+		snprintf(buffer, 10, "%f", PRESS.pressure);
+		f_printf(&fil, "%s;", buffer);
+		snprintf(buffer, 10, "%f", ANGLE.Ax);
+		f_printf(&fil, "%s;", buffer);
+		snprintf(buffer, 10, "%f", ANGLE.Ay);
+		f_printf(&fil, "%s;", buffer);
+		snprintf(buffer, 10, "%f", ANGLE.Az);
+		f_printf(&fil, "%s;", buffer);
+		snprintf(buffer, 10, "%f", ANGLE.Gx);
+		f_printf(&fil, "%s;", buffer);
+		snprintf(buffer, 10, "%f", ANGLE.Gy);
+		f_printf(&fil, "%s;", buffer);
+		snprintf(buffer, 10, "%f", ANGLE.Gz);
+		f_printf(&fil, "%s;", buffer);
+		snprintf(buffer, 10, "%f", ANGLE.Temperature);
+		f_printf(&fil, "%s\n", buffer);
+
+		f_sync(&fil);
+	}
+
+	uint8_t buff[47] = {0};
+	uint8_t index = 0;
+
+    //PRESS.temperature   = 10;
+    //PRESS.pressure      = 10;
+//
+    //TEMP.temperature    = 10;
+//
+    //TIME.Hour           = 10;
+    //TIME.Min            = 10;
+    //TIME.Sec            = 10;
+//
+    //ANGLE.Gx            = 10;
+    //ANGLE.Gy            = 10;
+    //ANGLE.Gz            = 10;
+    //ANGLE.Ax            = 10;
+    //ANGLE.Az            = 10;
+    //ANGLE.Az            = 10;
+//
+    //MSG_SEQ_MOTOR       = 10;
+    //MSG_SEQ_PHASE       = 10;
+//
+    //HW_status.BMP280    = 1;
+    //HW_status.DS18B20   = 1;
+    //HW_status.DS3231    = 1;
+    //HW_status.MPU6050   = 1;
+
+    
+    buff[index] = '[';
+    index += 1;
+
+    // BMP280
+    memcpy(buff + index, &PRESS.temperature, sizeof(PRESS.temperature));
+    index += sizeof(PRESS.temperature);
+    memcpy(buff + index, &PRESS.pressure, sizeof(PRESS.pressure));
+    index += sizeof(PRESS.pressure);
+    memcpy(buff + index, &HW_status.BMP280, sizeof(HW_status.BMP280));
+    index += sizeof(HW_status.BMP280);
+
+    // DS18B20
+    memcpy(buff + index, &TEMP.temperature, sizeof(TEMP.temperature));
+    index += sizeof(TEMP.temperature);
+    memcpy(buff + index, &HW_status.DS18B20, sizeof(HW_status.DS18B20));
+    index += sizeof(HW_status.DS18B20);
+
+    // DS3231
+    memcpy(buff + index, &TIME.Hour, sizeof(TIME.Hour));
+    index += sizeof(TIME.Hour);
+    memcpy(buff + index, &TIME.Min, sizeof(TIME.Min));
+    index += sizeof(TIME.Min);
+    memcpy(buff + index, &TIME.Sec, sizeof(TIME.Sec));
+    index += sizeof(TIME.Sec);
+    memcpy(buff + index, &HW_status.DS3231, sizeof(HW_status.DS3231));
+    index += sizeof(HW_status.DS3231);
+
+    // MPU6050
+    memcpy(buff + index, &ANGLE.Gx, sizeof(ANGLE.Gx));
+    index += sizeof(ANGLE.Gx);
+    memcpy(buff + index, &ANGLE.Gy, sizeof(ANGLE.Gy));
+    index += sizeof(ANGLE.Gy);
+    memcpy(buff + index, &ANGLE.Gz, sizeof(ANGLE.Gz));
+    index += sizeof(ANGLE.Gz);
+    memcpy(buff + index, &ANGLE.Ax, sizeof(ANGLE.Ax));
+    index += sizeof(ANGLE.Ax);
+    memcpy(buff + index, &ANGLE.Ay, sizeof(ANGLE.Ay));
+    index += sizeof(ANGLE.Ay);
+    memcpy(buff + index, &ANGLE.Az, sizeof(ANGLE.Az));
+    index += sizeof(ANGLE.Az);
+    memcpy(buff + index, &HW_status.MPU6050, sizeof(HW_status.MPU6050));
+    index += sizeof(HW_status.MPU6050);
+    
+    // message seq
+    memcpy(buff + index, &MSG_SEQ_PHASE, sizeof(MSG_SEQ_PHASE));
+    index += sizeof(MSG_SEQ_PHASE);
+    memcpy(buff + index, &MSG_SEQ_MOTOR, sizeof(MSG_SEQ_MOTOR));
+    index += sizeof(MSG_SEQ_MOTOR);
+
+    buff[index] = ']';
+    index += 1;
+
+	HAL_UART_Transmit(&huart1, (uint8_t*)buff, index, TIMEOUT_UART);
+
+
+	/* wait for scheduler synchro */
 	synchro_wait();
 
     /* USER CODE END WHILE */
@@ -212,7 +318,9 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
+  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL16;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -221,12 +329,12 @@ void SystemClock_Config(void)
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
   {
     Error_Handler();
   }
@@ -263,27 +371,9 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
   //  if(huart->Instance == USART2) trig = 1;//broadcast_uart_receive();HAL_UART_Receive_IT(&huart2, pData, 1);
 	if(huart->Instance == USART2)
 	{
-		msg_id = *pData;
-
-		switch (*pData)
-		{
-		case 0xA1 : phase = PHASE_WAIT; break;
-		case 0xA2 : phase = PHASE_ASCEND; break;
-		case 0xA3 : phase = PHASE_DEPLOY; break;
-		case 0xA4 : phase = PHASE_DESCEND; break;
-		case 0xA5 : phase = PHASE_LANDED; break;
-
-		case 0xB1 : jack = JACK_PLUGGED; break;
-		case 0xB2 : jack = JACK_UNPLUGGED; break;
-
-		
-		default:
-			break;
-		}
-		
+		MSG_LOG_dispatch(*pData);
 		HAL_UART_Receive_IT(&huart2, pData, 1);
 	} 
-
 }
 
 
@@ -296,7 +386,7 @@ void routine_no_frame(void)
 	routine_DS3231();
 	routine_BMP280();
 	routine_MPU6050();
-	//routine_DS18B20();
+	routine_DS18B20();
 }
 
 
@@ -309,7 +399,7 @@ void routine_menu_frame(void)
 	routine_DS3231();
 	routine_BMP280();
 	routine_MPU6050();
-	//routine_DS18B20();
+	routine_DS18B20();
 
 	HMI_OLED_display_menu_selector();
 	SSD1306_UpdateScreen();
@@ -325,7 +415,7 @@ void routine_data_log_frame(void)
 	routine_DS3231();
 	routine_BMP280();
 	routine_MPU6050();
-	//routine_DS18B20();
+	routine_DS18B20();
 
 	if(HW_status.DS3231 == HAL_OK)
 	{
@@ -375,12 +465,10 @@ void routine_status_frame(void)
 	routine_DS3231();
 	routine_BMP280();
 	routine_MPU6050();
-	//routine_DS18B20();
+	routine_DS18B20();
 
 	HMI_OLED_display_status_phase();
 	HMI_OLED_display_status_jack();
-	HMI_OLED_display_status_msg_id();
-	HMI_OLED_display_status_errors_number();
 
 	SSD1306_UpdateScreen();
 }
@@ -445,16 +533,31 @@ void routine_MPU6050(void)
  * ************************************************************* **/
 void routine_DS18B20(void)
 {
-	if(DS18B20_Get_Temp() == HAL_OK)
-	{
-		if(HW_status.DS18B20 == HAL_ERROR) DS18B20_Init();
-		HW_status.DS18B20 = HAL_OK;
-		TEMP = DS18B20_Get_Struct();
-	}
-	else
-	{
-		HW_status.DS18B20 = HAL_ERROR;
-	}
+	DS18B20_Get_Temp();
+	TEMP = DS18B20_Get_Struct();
+}
+
+/** ************************************************************* *
+ * @brief       
+ * 
+ * @return      true 
+ * @return      false 
+ * ************************************************************* **/
+uint8_t SDCARD_Init(void)
+{
+	
+    fres = f_mount(NULL, "", 0);
+    fres = f_mount(&FatFs, "", 1); //1=mount now
+    fres = f_open(&fil, "datalog.txt", FA_WRITE | FA_OPEN_ALWAYS | FA_CREATE_ALWAYS);
+
+    if(fres != FR_OK)
+    {
+    	  return HAL_ERROR;
+    }
+    else
+    {
+    	  return HAL_OK;
+    }
 }
 
 /* USER CODE END 4 */

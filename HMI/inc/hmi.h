@@ -92,6 +92,7 @@ void        HMI_OLED_display_init_log_time(HW_status_t HW_init);
 void        HMI_OLED_display_init_log_press(HW_status_t HW_init);
 void        HMI_OLED_display_init_log_angle(HW_status_t HW_init);
 void        HMI_OLED_display_init_log_temp(HW_status_t HW_init);
+void        HMI_OLED_display_init_log_sd(HW_status_t HW_init);
 
 /* display data log screen */
 uint8_t     HMI_OLED_display_data_log(void);
@@ -101,15 +102,11 @@ void        HMI_OLED_display_data_log_press(BMP280_t PRESS);
 void        HMI_OLED_display_data_log_angle(MPU6050_t ANGLE);
 void        HMI_OLED_display_data_log_temp(DS18B20_t TEMP);
 
+
 /* display status screen */
 uint8_t		HMI_OLED_display_status(void);
 void		   HMI_OLED_display_status_phase(void);
 void		   HMI_OLED_display_status_jack(void);
-void        HMI_OLED_display_status_msg_id(void);
-void		   HMI_OLED_display_status_errors_number(void);
-
-/* display errors list */
-void		   HMI_OLED_display_error_list(void);
 
 
 /* **************************************** **

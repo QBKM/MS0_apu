@@ -30,7 +30,7 @@ typedef struct DS18B20_t{
    function prototypes
 -- ------------------------------------------------------------- */
 uint8_t DS18B20_Init(void);
-uint8_t DS18B20_Get_Temp(void);
+void DS18B20_Get_Temp(void);
 DS18B20_t DS18B20_Get_Struct(void);
 
 

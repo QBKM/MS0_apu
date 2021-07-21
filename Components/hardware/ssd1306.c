@@ -378,59 +378,59 @@ uint8_t SSD1306_Puts_float(float number, uint8_t printsize, FontDef_t* Font, SSD
 	return *buffer;
 }
 
-/** ************************************************************* *
- * @brief       scroll text to the right
- * 
- * @param       start_row 
- * @param       end_row 
- * ************************************************************* **/
-uint8_t SSD1306_ScrollRight(uint8_t start_row, uint8_t end_row)
-{
-	if(	SSD1306_WriteCommand(SSD1306_RIGHT_HORIZONTAL_SCROLL)	// send 0x26
-	||	SSD1306_WriteCommand(0x00)  							// send dummy
-	||	SSD1306_WriteCommand(start_row)  						// start page address
-	||	SSD1306_WriteCommand(0X00)  							// time interval 5 frames
-	||	SSD1306_WriteCommand(end_row)  							// end page address
-	||	SSD1306_WriteCommand(0X00)
-	||	SSD1306_WriteCommand(0XFF)
-	||	SSD1306_WriteCommand(SSD1306_ACTIVATE_SCROLL)) 			// start scroll
-	{
-		return HAL_ERROR;
-	}
+///** ************************************************************* *
+// * @brief       scroll text to the right
+// * 
+// * @param       start_row 
+// * @param       end_row 
+// * ************************************************************* **/
+//uint8_t SSD1306_ScrollRight(uint8_t start_row, uint8_t end_row)
+//{
+//	if(	SSD1306_WriteCommand(SSD1306_RIGHT_HORIZONTAL_SCROLL)	// send 0x26
+//	||	SSD1306_WriteCommand(0x00)  							// send dummy
+//	||	SSD1306_WriteCommand(start_row)  						// start page address
+//	||	SSD1306_WriteCommand(0X00)  							// time interval 5 frames
+//	||	SSD1306_WriteCommand(end_row)  							// end page address
+//	||	SSD1306_WriteCommand(0X00)
+//	||	SSD1306_WriteCommand(0XFF)
+//	||	SSD1306_WriteCommand(SSD1306_ACTIVATE_SCROLL)) 			// start scroll
+//	{
+//		return HAL_ERROR;
+//	}
+//
+//	return HAL_OK;
+//}
+//
+///** ************************************************************* *
+// * @brief       scroll text to the left
+// * 
+// * @param       start_row 
+// * @param       end_row 
+// * ************************************************************* **/
+//uint8_t SSD1306_ScrollLeft(uint8_t start_row, uint8_t end_row)
+//{
+//	if(	SSD1306_WriteCommand(SSD1306_LEFT_HORIZONTAL_SCROLL)  	// send 0x26
+//	||	SSD1306_WriteCommand(0x00)  							// send dummy
+//	||	SSD1306_WriteCommand(start_row)  						// start page address
+//	||	SSD1306_WriteCommand(0X00)  							// time interval 5 frames
+//	||	SSD1306_WriteCommand(end_row)  							// end page address
+//	||	SSD1306_WriteCommand(0X00)
+//	||	SSD1306_WriteCommand(0XFF)
+//	||	SSD1306_WriteCommand(SSD1306_ACTIVATE_SCROLL)) 			// start scroll
+//	{
+//		return HAL_ERROR;
+//	}
+//
+//	return HAL_OK;
+//}
 
-	return HAL_OK;
-}
-
-/** ************************************************************* *
- * @brief       scroll text to the left
- * 
- * @param       start_row 
- * @param       end_row 
- * ************************************************************* **/
-uint8_t SSD1306_ScrollLeft(uint8_t start_row, uint8_t end_row)
-{
-	if(	SSD1306_WriteCommand(SSD1306_LEFT_HORIZONTAL_SCROLL)  	// send 0x26
-	||	SSD1306_WriteCommand(0x00)  							// send dummy
-	||	SSD1306_WriteCommand(start_row)  						// start page address
-	||	SSD1306_WriteCommand(0X00)  							// time interval 5 frames
-	||	SSD1306_WriteCommand(end_row)  							// end page address
-	||	SSD1306_WriteCommand(0X00)
-	||	SSD1306_WriteCommand(0XFF)
-	||	SSD1306_WriteCommand(SSD1306_ACTIVATE_SCROLL)) 			// start scroll
-	{
-		return HAL_ERROR;
-	}
-
-	return HAL_OK;
-}
-
-/** ************************************************************* *
- * @brief       stop the scroll
- * 
- * ************************************************************* **/
-uint8_t SSD1306_Stopscroll(void)
-{
-	if(SSD1306_WriteCommand(SSD1306_DEACTIVATE_SCROLL)) return HAL_ERROR;
-
-	return HAL_OK;
-}
+///** ************************************************************* *
+// * @brief       stop the scroll
+// * 
+// * ************************************************************* **/
+//uint8_t SSD1306_Stopscroll(void)
+//{
+//	if(SSD1306_WriteCommand(SSD1306_DEACTIVATE_SCROLL)) return HAL_ERROR;
+//
+//	return HAL_OK;
+//}

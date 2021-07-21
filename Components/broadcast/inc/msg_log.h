@@ -16,8 +16,8 @@
    includeq
 -- ------------------------------------------------------------- */
 #include "stdint.h"
-#include "stdbool.h"
 
+#define BUFF_SIZE 10
 
 /* ------------------------------------------------------------- --
    types
@@ -44,39 +44,21 @@ typedef enum
     WINDOW_RELOCK
 }window_t;
 
-struct fifo
-{
-    volatile uint8_t * data_ptr;
-    volatile uint16_t size;
-    volatile uint16_t write_index;
-    volatile uint16_t read_index;
-    volatile uint16_t elements;
-};
-
 /* ------------------------------------------------------------- --
    variables
 -- ------------------------------------------------------------- */
 phase_t phase;
 jack_t jack;
-uint8_t msg_id;
+uint8_t MSG_SEQ;
+uint8_t MSG_SEQ_MOTOR;
+uint8_t MSG_SEQ_PHASE;
 window_t window_IT;
 window_t window_POOL;
 
 /* ------------------------------------------------------------- --
    function prototypes
 -- ------------------------------------------------------------- */
-//void MSG_LOG_init(void);
-//void MSG_LOG_push(const uint8_t message);
-//void MSG_LOG_pop(void);
-//void MSG_LOG_dispatch(const uint8_t message);
-//void MSG_LOG_flush(void);
-
+void MSG_LOG_init(void);
 void MSG_LOG_dispatch(const uint8_t message);
-
-void fifo_init(struct fifo * fifo);
-bool fifo_is_full(struct fifo * fifo);
-bool fifo_is_empty(struct fifo * fifo);
-bool fifo_pop(struct fifo * fifo, uint8_t newbyte);
-bool fifo_push(struct fifo * fifo, uint8_t * output);
 
 #endif
