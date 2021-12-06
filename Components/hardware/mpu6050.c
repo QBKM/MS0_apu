@@ -334,7 +334,10 @@ uint8_t MPU6050_Read_All_Kalman(void)
         roll = 0.0;
     }
 
+
+
     float pitch = atan2(-MPU6050.Accel_X_RAW, MPU6050.Accel_Z_RAW) * RAD_TO_DEG;
+
     if((pitch < -90 && MPU6050.KalmanAngleY > 90) 
 	|| (pitch > 90 && MPU6050.KalmanAngleY < -90)) 
 	{
@@ -347,6 +350,7 @@ uint8_t MPU6050_Read_All_Kalman(void)
     }
 
     if (fabs(MPU6050.KalmanAngleY) > 90) MPU6050.Gx = -MPU6050.Gx;
+
     MPU6050.KalmanAngleX = MPU6050_Kalman_getAngle(&KalmanX, roll, MPU6050.Gy, dt);
 
     return HAL_OK;

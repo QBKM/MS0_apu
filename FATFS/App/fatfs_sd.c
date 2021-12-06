@@ -172,7 +172,8 @@ static bool SD_RxDataBlock(BYTE *buff, UINT btr)
 #if _READONLY == 0
 static bool SD_TxDataBlock(const BYTE *buff, BYTE token)
 {
-  uint8_t resp, wc;
+  uint8_t resp = 0;
+  uint8_t wc;
   uint8_t i = 0;
 
   /* SD카드 준비 대기 */

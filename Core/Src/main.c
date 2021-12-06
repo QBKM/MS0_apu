@@ -68,6 +68,7 @@ FIL fil; 		    //File handle
 FRESULT fres;       //Result after operations
 
 uint8_t msg_seq = 0;
+uint8_t pData[10];
 
 /* USER CODE END PV */
 
@@ -85,15 +86,13 @@ void routine_MPU6050(void);
 void routine_DS18B20(void);
 
 uint8_t SDCARD_Init(void);
+void SDCARD_write(void);
+
+void BUFFER_fill(uint8_t* buff);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
-///////////////////////////////////////////////////////////////
-	uint8_t pData[10];
-	//uint8_t trig = 0;
-	/////////////////////////////////////////////////////////
 /* USER CODE END 0 */
 
 /**
@@ -133,12 +132,12 @@ int main(void)
 
 	HW_status_t HW_init =
 	{
-	.DS3231 	= DS3231_Init(),
-	.MPU6050 	= MPU6050_Init(),
-	.BMP280 	= BMP280_Init(),
-	.SSD1306 	= SSD1306_Init(),
-	.DS18B20	= DS18B20_Init(),
-	.TCA6408A	= TCA6408A_Init(),
+    .DS3231 	= DS3231_Init(),
+    .MPU6050 	= MPU6050_Init(),
+    .BMP280 	= BMP280_Init(),
+    .SSD1306 	= SSD1306_Init(),
+    .DS18B20	= DS18B20_Init(),
+    .TCA6408A	= TCA6408A_Init(),
     .SDCARD     = SDCARD_Init()
 	};
 
@@ -183,114 +182,15 @@ int main(void)
 	
 
 	/* write data on sdcard */
-	if(HW_status.SDCARD == HAL_OK)
+	if(HW_init.SDCARD == HAL_OK)
 	{
-		f_printf(&fil, "%d;%d;%d;", TIME.Hour, TIME.Min, TIME.Sec);
-		char buffer[10];
-		snprintf(buffer, 10, "%f", PRESS.temperature);
-		f_printf(&fil, "%s;", buffer);
-		snprintf(buffer, 10, "%f", PRESS.pressure);
-		f_printf(&fil, "%s;", buffer);
-		snprintf(buffer, 10, "%f", ANGLE.Ax);
-		f_printf(&fil, "%s;", buffer);
-		snprintf(buffer, 10, "%f", ANGLE.Ay);
-		f_printf(&fil, "%s;", buffer);
-		snprintf(buffer, 10, "%f", ANGLE.Az);
-		f_printf(&fil, "%s;", buffer);
-		snprintf(buffer, 10, "%f", ANGLE.Gx);
-		f_printf(&fil, "%s;", buffer);
-		snprintf(buffer, 10, "%f", ANGLE.Gy);
-		f_printf(&fil, "%s;", buffer);
-		snprintf(buffer, 10, "%f", ANGLE.Gz);
-		f_printf(&fil, "%s;", buffer);
-		snprintf(buffer, 10, "%f", ANGLE.Temperature);
-		f_printf(&fil, "%s\n", buffer);
-
-		f_sync(&fil);
+        SDCARD_write();
 	}
 
+    /* send over uart */
 	uint8_t buff[47] = {0};
-	uint8_t index = 0;
-
-    //PRESS.temperature   = 10;
-    //PRESS.pressure      = 10;
-//
-    //TEMP.temperature    = 10;
-//
-    //TIME.Hour           = 10;
-    //TIME.Min            = 10;
-    //TIME.Sec            = 10;
-//
-    //ANGLE.Gx            = 10;
-    //ANGLE.Gy            = 10;
-    //ANGLE.Gz            = 10;
-    //ANGLE.Ax            = 10;
-    //ANGLE.Az            = 10;
-    //ANGLE.Az            = 10;
-//
-    //MSG_SEQ_MOTOR       = 10;
-    //MSG_SEQ_PHASE       = 10;
-//
-    //HW_status.BMP280    = 1;
-    //HW_status.DS18B20   = 1;
-    //HW_status.DS3231    = 1;
-    //HW_status.MPU6050   = 1;
-
-    
-    buff[index] = '[';
-    index += 1;
-
-    // BMP280
-    memcpy(buff + index, &PRESS.temperature, sizeof(PRESS.temperature));
-    index += sizeof(PRESS.temperature);
-    memcpy(buff + index, &PRESS.pressure, sizeof(PRESS.pressure));
-    index += sizeof(PRESS.pressure);
-    memcpy(buff + index, &HW_status.BMP280, sizeof(HW_status.BMP280));
-    index += sizeof(HW_status.BMP280);
-
-    // DS18B20
-    memcpy(buff + index, &TEMP.temperature, sizeof(TEMP.temperature));
-    index += sizeof(TEMP.temperature);
-    memcpy(buff + index, &HW_status.DS18B20, sizeof(HW_status.DS18B20));
-    index += sizeof(HW_status.DS18B20);
-
-    // DS3231
-    memcpy(buff + index, &TIME.Hour, sizeof(TIME.Hour));
-    index += sizeof(TIME.Hour);
-    memcpy(buff + index, &TIME.Min, sizeof(TIME.Min));
-    index += sizeof(TIME.Min);
-    memcpy(buff + index, &TIME.Sec, sizeof(TIME.Sec));
-    index += sizeof(TIME.Sec);
-    memcpy(buff + index, &HW_status.DS3231, sizeof(HW_status.DS3231));
-    index += sizeof(HW_status.DS3231);
-
-    // MPU6050
-    memcpy(buff + index, &ANGLE.Gx, sizeof(ANGLE.Gx));
-    index += sizeof(ANGLE.Gx);
-    memcpy(buff + index, &ANGLE.Gy, sizeof(ANGLE.Gy));
-    index += sizeof(ANGLE.Gy);
-    memcpy(buff + index, &ANGLE.Gz, sizeof(ANGLE.Gz));
-    index += sizeof(ANGLE.Gz);
-    memcpy(buff + index, &ANGLE.Ax, sizeof(ANGLE.Ax));
-    index += sizeof(ANGLE.Ax);
-    memcpy(buff + index, &ANGLE.Ay, sizeof(ANGLE.Ay));
-    index += sizeof(ANGLE.Ay);
-    memcpy(buff + index, &ANGLE.Az, sizeof(ANGLE.Az));
-    index += sizeof(ANGLE.Az);
-    memcpy(buff + index, &HW_status.MPU6050, sizeof(HW_status.MPU6050));
-    index += sizeof(HW_status.MPU6050);
-    
-    // message seq
-    memcpy(buff + index, &MSG_SEQ_PHASE, sizeof(MSG_SEQ_PHASE));
-    index += sizeof(MSG_SEQ_PHASE);
-    memcpy(buff + index, &MSG_SEQ_MOTOR, sizeof(MSG_SEQ_MOTOR));
-    index += sizeof(MSG_SEQ_MOTOR);
-
-    buff[index] = ']';
-    index += 1;
-
-	HAL_UART_Transmit(&huart1, (uint8_t*)buff, index, TIMEOUT_UART);
-
+    BUFFER_fill(buff);
+	HAL_UART_Transmit(&huart1, (uint8_t*)buff, 47, TIMEOUT_UART);
 
 	/* wait for scheduler synchro */
 	synchro_wait();
@@ -548,7 +448,7 @@ uint8_t SDCARD_Init(void)
 	
     fres = f_mount(NULL, "", 0);
     fres = f_mount(&FatFs, "", 1); //1=mount now
-    fres = f_open(&fil, "datalog.txt", FA_WRITE | FA_OPEN_ALWAYS | FA_CREATE_ALWAYS);
+    fres = f_open(&fil, "datalog.txt", FA_WRITE | FA_OPEN_ALWAYS);
 
     if(fres != FR_OK)
     {
@@ -558,6 +458,83 @@ uint8_t SDCARD_Init(void)
     {
     	  return HAL_OK;
     }
+}
+
+void SDCARD_write(void)
+{
+    f_printf(&fil, "%d;%d;%d;", TIME.Hour, TIME.Min, TIME.Sec);
+    char buffer[10];
+    snprintf(buffer, 10, "%f", PRESS.temperature);
+    f_printf(&fil, "%s;", buffer);
+    snprintf(buffer, 10, "%f", PRESS.pressure);
+    f_printf(&fil, "%s;", buffer);
+    snprintf(buffer, 10, "%f", ANGLE.Ax);
+    f_printf(&fil, "%s;", buffer);
+    snprintf(buffer, 10, "%f", ANGLE.Ay);
+    f_printf(&fil, "%s;", buffer);
+    snprintf(buffer, 10, "%f", ANGLE.Az);
+    f_printf(&fil, "%s;", buffer);
+    snprintf(buffer, 10, "%f", ANGLE.Gx);
+    f_printf(&fil, "%s;", buffer);
+    snprintf(buffer, 10, "%f", ANGLE.Gy);
+    f_printf(&fil, "%s;", buffer);
+    snprintf(buffer, 10, "%f", ANGLE.Gz);
+    f_printf(&fil, "%s;", buffer);
+    snprintf(buffer, 10, "%f", ANGLE.Temperature);
+    f_printf(&fil, "%s\n", buffer);
+
+    f_sync(&fil);
+}
+
+void BUFFER_fill(uint8_t* buff)
+{
+	uint8_t index = 0;
+
+    // BMP280
+    memcpy(buff + index, &PRESS.temperature, sizeof(PRESS.temperature));
+    index += sizeof(PRESS.temperature);
+    memcpy(buff + index, &PRESS.pressure, sizeof(PRESS.pressure));
+    index += sizeof(PRESS.pressure);
+    memcpy(buff + index, &HW_status.BMP280, sizeof(HW_status.BMP280));
+    index += sizeof(HW_status.BMP280);
+
+    // DS18B20
+    memcpy(buff + index, &TEMP.temperature, sizeof(TEMP.temperature));
+    index += sizeof(TEMP.temperature);
+    memcpy(buff + index, &HW_status.DS18B20, sizeof(HW_status.DS18B20));
+    index += sizeof(HW_status.DS18B20);
+
+    // DS3231
+    memcpy(buff + index, &TIME.Hour, sizeof(TIME.Hour));
+    index += sizeof(TIME.Hour);
+    memcpy(buff + index, &TIME.Min, sizeof(TIME.Min));
+    index += sizeof(TIME.Min);
+    memcpy(buff + index, &TIME.Sec, sizeof(TIME.Sec));
+    index += sizeof(TIME.Sec);
+    memcpy(buff + index, &HW_status.DS3231, sizeof(HW_status.DS3231));
+    index += sizeof(HW_status.DS3231);
+
+    // MPU6050
+    memcpy(buff + index, &ANGLE.Gx, sizeof(ANGLE.Gx));
+    index += sizeof(ANGLE.Gx);
+    memcpy(buff + index, &ANGLE.Gy, sizeof(ANGLE.Gy));
+    index += sizeof(ANGLE.Gy);
+    memcpy(buff + index, &ANGLE.Gz, sizeof(ANGLE.Gz));
+    index += sizeof(ANGLE.Gz);
+    memcpy(buff + index, &ANGLE.Ax, sizeof(ANGLE.Ax));
+    index += sizeof(ANGLE.Ax);
+    memcpy(buff + index, &ANGLE.Ay, sizeof(ANGLE.Ay));
+    index += sizeof(ANGLE.Ay);
+    memcpy(buff + index, &ANGLE.Az, sizeof(ANGLE.Az));
+    index += sizeof(ANGLE.Az);
+    memcpy(buff + index, &HW_status.MPU6050, sizeof(HW_status.MPU6050));
+    index += sizeof(HW_status.MPU6050);
+    
+    // message seq
+    memcpy(buff + index, &MSG_SEQ_PHASE, sizeof(MSG_SEQ_PHASE));
+    index += sizeof(MSG_SEQ_PHASE);
+    memcpy(buff + index, &MSG_SEQ_MOTOR, sizeof(MSG_SEQ_MOTOR));
+    index += sizeof(MSG_SEQ_MOTOR);
 }
 
 /* USER CODE END 4 */
