@@ -68,9 +68,9 @@ uint8_t SSD1306_Puts_Num16bits(int16_t number, uint8_t printsize, FontDef_t* Fon
 uint8_t SSD1306_Puts_float(float number, uint8_t printsize, FontDef_t* Font, SSD1306_COLOR_t color);
 
 /* scroll */
-uint8_t SSD1306_ScrollRight(uint8_t start_row, uint8_t end_row);
-uint8_t SSD1306_ScrollLeft(uint8_t start_row, uint8_t end_row);
-uint8_t SSD1306_Stopscroll(void);
+//uint8_t SSD1306_ScrollRight(uint8_t start_row, uint8_t end_row);
+//uint8_t SSD1306_ScrollLeft(uint8_t start_row, uint8_t end_row);
+//uint8_t SSD1306_Stopscroll(void);
 
 /* i2c */
 uint8_t SSD1306_I2C_WriteMulti(uint8_t address, uint8_t reg, uint8_t *data, uint16_t count);

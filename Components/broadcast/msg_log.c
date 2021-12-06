@@ -14,17 +14,17 @@
 -- ------------------------------------------------------------- */
 #include "msg_log.h"
 #include "msg_list.h"
+#include "tca6408a.h"
 
 /* ------------------------------------------------------------- --
    defines
 -- ------------------------------------------------------------- */
-#define BUFF_SIZE 64
+
 
 /* ------------------------------------------------------------- --
    variables
 -- ------------------------------------------------------------- */
-uint8_t MSG_LOG[BUFF_SIZE] = {0};
-uint8_t buff_index = 0;
+
 
 /* ============================================================= ==
    private functions
@@ -33,14 +33,17 @@ void MSG_LOG_dispatch(const uint8_t message)
 {
     switch (message)
     {
-        case 0xA1: phase = PHASE_WAIT;              break;
-        case 0xA2: phase = PHASE_ASCEND;            break;
-        case 0xA3: phase = PHASE_DEPLOY;            break;
-        case 0xA4: phase = PHASE_DESCEND;           break;
-        case 0xA5: phase = PHASE_LANDED;            break;
+        case 0xA1: phase = PHASE_WAIT;        MSG_SEQ_PHASE = message;   TCA6408A_Write_Pin(TCA6408A_PIN4, LOW);   break;
+        case 0xA2: phase = PHASE_ASCEND;      MSG_SEQ_PHASE = message;   TCA6408A_Write_Pin(TCA6408A_PIN4, HIGH);  break;
+        case 0xA3: phase = PHASE_DEPLOY;      MSG_SEQ_PHASE = message;      break;
+        case 0xA4: phase = PHASE_DESCEND;     MSG_SEQ_PHASE = message;      break;
+        case 0xA5: phase = PHASE_LANDED;      MSG_SEQ_PHASE = message;      break; 
 
         case 0xB1: jack = JACK_PLUGGED;             break;
         case 0xB2: jack = JACK_UNPLUGGED;           break;
+
+        case 0xC6: MSG_SEQ = message;        MSG_SEQ_MOTOR = message;       break;  /* motor start */
+        case 0xC7: MSG_SEQ = message;        MSG_SEQ_MOTOR = message;       break;  /* motor stop */
         
         case 0xF1: window_IT    = WINDOW_UNLOCK;    break;
         case 0xF2: window_POOL  = WINDOW_UNLOCK;    break;
@@ -59,34 +62,12 @@ void MSG_LOG_dispatch(const uint8_t message)
  * ************************************************************* **/
 void MSG_LOG_init(void)
 {
-    phase       = PHASE_WAIT;
-    jack        = JACK_UNPLUGGED;
-    window_IT   = WINDOW_LOCK;
-    window_POOL = WINDOW_LOCK;
-
-    buff_index = 0;
+    phase         = PHASE_WAIT;
+    jack          = JACK_PLUGGED;
+    window_IT     = WINDOW_LOCK;
+    window_POOL   = WINDOW_LOCK;
+    MSG_SEQ       = 0;
+    MSG_SEQ_MOTOR = 0;
+    MSG_SEQ_PHASE = 0;
 }
 
-/** ************************************************************* *
- * @brief       push the message into the message buffer
- * 
- * @param       message 
- * ************************************************************* **/
-void MSG_LOG_push(const uint8_t message)
-{
-    MSG_LOG[buff_index] = message;
-    buff_index +=1;
-}
-
-/** ************************************************************* *
- * @brief       pop the message from the message buffer
- * 
- * ************************************************************* **/
-void MSG_LOG_pop(void)
-{
-    while(buff_index > 0)
-    {
-        MSG_LOG_dispatch(MSG_LOG[0]);
-        buff_index -=1;
-    }
-}

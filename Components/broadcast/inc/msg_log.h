@@ -17,6 +17,7 @@
 -- ------------------------------------------------------------- */
 #include "stdint.h"
 
+#define BUFF_SIZE 10
 
 /* ------------------------------------------------------------- --
    types
@@ -48,6 +49,9 @@ typedef enum
 -- ------------------------------------------------------------- */
 phase_t phase;
 jack_t jack;
+uint8_t MSG_SEQ;
+uint8_t MSG_SEQ_MOTOR;
+uint8_t MSG_SEQ_PHASE;
 window_t window_IT;
 window_t window_POOL;
 
@@ -55,9 +59,6 @@ window_t window_POOL;
    function prototypes
 -- ------------------------------------------------------------- */
 void MSG_LOG_init(void);
-void MSG_LOG_push(const uint8_t message);
-void MSG_LOG_pop(void);
 void MSG_LOG_dispatch(const uint8_t message);
-
 
 #endif

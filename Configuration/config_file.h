@@ -52,6 +52,9 @@
 /* TCA6408A */
 #define TCA6408A_ADDR       (0x20 << 1)     /* TCA6408A address is 0x21 */
 
+/* SD CARD */
+#define SDCARD_WRITE_DELAY   100             /* [ms] time between two write */
+
 
 /**************************************************************** *
  * 	HMI
@@ -88,6 +91,7 @@
 #define HMI_OLED_INIT_LINE_BMP280       HMI_OLED_LINE_2
 #define HMI_OLED_INIT_LINE_MPU6050      HMI_OLED_LINE_3
 #define HMI_OLED_INIT_LINE_DS18B20      HMI_OLED_LINE_4
+#define HMI_OLED_INIT_LINE_SDCARD       HMI_OLED_LINE_5
 
 /* OLED data line */
 #define HMI_OLED_DATA_LINE_HEADER       HMI_OLED_LINE_1
@@ -100,7 +104,7 @@
 #define HMI_OLED_STATUS_LINE_HEADER     HMI_OLED_LINE_1
 #define HMI_OLED_STATUS_LINE_PHASE      HMI_OLED_LINE_2
 #define HMI_OLED_STATUS_LINE_JACK       HMI_OLED_LINE_3
-#define HMI_OLED_STATUS_LINE_ERRORS     HMI_OLED_LINE_5
+
 
 
 #endif

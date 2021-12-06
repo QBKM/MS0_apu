@@ -22,9 +22,18 @@
 #define MSG_ID_phase_descend        (uint8_t)0xA4
 #define MSG_ID_phase_landed         (uint8_t)0xA5
 
-/* hard ID */
+/* jack ID */
 #define MSG_ID_HW_jack_plugged      (uint8_t)0xB1
 #define MSG_ID_HW_jack_unplugged    (uint8_t)0xB2
+
+/* recovery system ID */
+#define MSG_ID_recsys_unlocked      (uint8_t)0xC1
+#define MSG_ID_recsys_unlocking     (uint8_t)0xC2
+#define MSG_ID_recsys_locked        (uint8_t)0xC3
+#define MSG_ID_recsys_locking       (uint8_t)0xC4
+#define MSG_ID_recsys_reverse       (uint8_t)0xC5
+#define MSG_ID_recsys_start_motor   (uint8_t)0xC6
+#define MSG_ID_recsys_stop_motor    (uint8_t)0xC7
 
 /* temporal window ID */
 #define MSG_ID_unlock_window_IT     (uint8_t)0xF1

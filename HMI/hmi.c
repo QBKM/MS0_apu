@@ -23,6 +23,7 @@
 #include "msg_log.h"
 #include "err_manager.h"
 
+#include "broadcast.h"
 
 /* ------------------------------------------------------------- --
    defines
@@ -236,6 +237,8 @@ uint8_t HMI_OLED_display_init_log(HW_status_t HW_init, uint32_t time, HMI_AfterD
 	SSD1306_Puts("MPU6050...",&Font_7x10, SSD1306_COLOR_WHITE);
 	SSD1306_GotoXY(0, HMI_OLED_INIT_LINE_DS18B20);
 	SSD1306_Puts("DS18B20...",&Font_7x10, SSD1306_COLOR_WHITE);
+	SSD1306_GotoXY(0, HMI_OLED_INIT_LINE_SDCARD);
+	SSD1306_Puts("SDCARD....",&Font_7x10, SSD1306_COLOR_WHITE);
 
     /* DS3231 status */
 	HMI_OLED_display_init_log_time(HW_init);
@@ -248,6 +251,9 @@ uint8_t HMI_OLED_display_init_log(HW_status_t HW_init, uint32_t time, HMI_AfterD
 
     /* DS18B20 status */
 	HMI_OLED_display_init_log_temp(HW_init);
+
+    /* SDCARD status */
+	HMI_OLED_display_init_log_sd(HW_init);
 
     /* update */
 	if(SSD1306_UpdateScreen()) return HAL_ERROR;
@@ -334,6 +340,23 @@ void HMI_OLED_display_init_log_temp(HW_status_t HW_init)
 
 }
 
+/** ************************************************************* *
+ * @brief       display the DS18B20 status
+ * 
+ * @param       HW_init 
+ * ************************************************************* **/
+void HMI_OLED_display_init_log_sd(HW_status_t HW_init)
+{
+	SSD1306_GotoXY(HMI_OLED_INIT_LOG_COLUMN, HMI_OLED_INIT_LINE_SDCARD);
+	if(HW_init.SDCARD == HAL_OK)
+	{
+		SSD1306_Puts("OK",&Font_7x10, SSD1306_COLOR_WHITE);
+	}
+	else
+	{
+		SSD1306_Puts("FAILED",&Font_7x10, SSD1306_COLOR_WHITE);
+	}
+}
 
 /** ************************************************************* *
  * @brief       display the menu for data log
@@ -432,13 +455,6 @@ void HMI_OLED_display_data_log_angle(MPU6050_t ANGLE)
 
 	SSD1306_GotoXY(13*7, HMI_OLED_DATA_LINE_ANGLEX);
 	SSD1306_Puts_float(ANGLE.KalmanAngleY, 6, &Font_7x10, SSD1306_COLOR_WHITE);
-
-
-	//SSD1306_GotoXY(HMI_OLED_DATA_LOG_COLUMN, HMI_OLED_DATA_LINE_ANGLEY);
-	//SSD1306_Puts("        ", &Font_7x10, SSD1306_COLOR_WHITE);
-
-	//SSD1306_GotoXY(HMI_OLED_DATA_LOG_COLUMN, HMI_OLED_DATA_LINE_ANGLEY);
-	//SSD1306_Puts_float(ANGLE.KalmanAngleY, 4, &Font_7x10, SSD1306_COLOR_WHITE);
 }
 
 /** ************************************************************* *
@@ -487,9 +503,6 @@ uint8_t HMI_OLED_display_status(void)
 	SSD1306_GotoXY(0, HMI_OLED_STATUS_LINE_JACK);
 	SSD1306_Puts("jack    : ", &Font_7x10, SSD1306_COLOR_WHITE);
 
-	SSD1306_GotoXY(0, HMI_OLED_STATUS_LINE_ERRORS);
-	SSD1306_Puts("nb errs : ", &Font_7x10, SSD1306_COLOR_WHITE);
-
 	/* update */
 	if(SSD1306_UpdateScreen()) return HAL_ERROR;
 
@@ -525,17 +538,8 @@ void HMI_OLED_display_status_jack(void)
 	SSD1306_GotoXY(HMI_OLED_STATUS_COLUMN, HMI_OLED_STATUS_LINE_JACK);
 	switch (jack)
 	{
-	case PHASE_WAIT: 	SSD1306_Puts("plugged", &Font_7x10, SSD1306_COLOR_WHITE); 	break;
-	case PHASE_ASCEND: 	SSD1306_Puts("unplugged", &Font_7x10, SSD1306_COLOR_WHITE);	break;
-	default:																		break;
+	case JACK_PLUGGED:		SSD1306_Puts("plugged", &Font_7x10, SSD1306_COLOR_WHITE); 	break;
+	case JACK_UNPLUGGED: 	SSD1306_Puts("unplugged", &Font_7x10, SSD1306_COLOR_WHITE);	break;
+	default:																			break;
 	}
-}
-
-void HMI_OLED_display_status_errors_number(void)
-{
-	SSD1306_GotoXY(HMI_OLED_STATUS_COLUMN, HMI_OLED_STATUS_LINE_ERRORS);
-	SSD1306_Puts("        ", &Font_7x10, SSD1306_COLOR_WHITE);
-
-	SSD1306_GotoXY(HMI_OLED_STATUS_COLUMN, HMI_OLED_STATUS_LINE_ERRORS);
-	SSD1306_Puts_Num16bits(err_counter, 9, &Font_7x10, SSD1306_COLOR_WHITE);
 }

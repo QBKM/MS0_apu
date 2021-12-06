@@ -29,6 +29,7 @@ typedef struct HW_status_t
 	HAL_StatusTypeDef SSD1306;
 	HAL_StatusTypeDef DS18B20;
 	HAL_StatusTypeDef TCA6408A;
+	HAL_StatusTypeDef SDCARD;
 }HW_status_t;
 
 
@@ -40,6 +41,5 @@ uint16_t err_counter;
 /* ------------------------------------------------------------- --
    function prototypes
 -- ------------------------------------------------------------- */
-uint8_t ERR_MNGR_HW_init(HW_status_t HW_init);
 
 #endif
